@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kontextabhängige Generierung von Alternativtexten</title>
+    <link rel="stylesheet" type="text/css" href="reset.css" />
+    <link rel="stylesheet" type="text/css" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Kontextabhängige Generierung von Alternativtexten</h2>
+
+      <p>
+        Diese Erweiterung nutzt den Service von OpenAI, um die Alternativtexte
+        zu generieren. Um Zugriff auf diesen Service zu erhalten, wird ein
+        API-Key benötigt. Bitte geh hierzu auf
+        <a href="https://openai.com/blog/openai-api">die Seite von OpenAI</a>
+        und erstelle einen API-Key.
+      </p>
+      <div class="api-container">
+        <input
+          type="text"
+          id="api-key-input"
+          class="api-key-input"
+          placeholder="API-Key eingeben"
+        />
+        <button class="btn" id="save-btn">
+          <img src="../icons/icon-save-50.svg" alt="Speichern des API-Key" />
+        </button>
+      </div>
+
+      <p>
+        <span id="current-shortcut">Loading...</span> drücken, um Alternativtext
+        für alle Bilder zu generieren.
+      </p>
+      <button id="change-shortcut" class="btn">Tastenkombination ändern</button>
+
+      <p>
+        Wenn Sie Autor dieser Webseite sind, können Sie sich auch die
+        generierten Alternativtexte in einer Übersicht anzeigen lassen.
+      </p>
+      <button class="btn" id="authormode">Autorenmodus</button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
