@@ -1,0 +1,68 @@
+body {
+  background-color: lightgray;
+}
+
+h1 {
+  text-align: center;
+  font-size: 4rem;
+}
+
+.loading {
+  animation: blink 2s linear infinite;
+  font-size: 3rem;
+  text-align: center;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.image-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 20px;
+  background-color: white;
+  padding: 20px;
+}
+
+.image-container img {
+  min-width: 100px;
+  max-width: 100%;
+  justify-self: center;
+}
+
+.image-data-container {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.image-data-container label {
+  justify-self: end;
+}
+
+.image-data-container p {
+  margin: 0;
+}
+
+@media screen and (max-width: 1700px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}

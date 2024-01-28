@@ -1,5 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'display_results') {
+    document.getElementById('loading').style.display = 'none'
     const images = request.images
     displayResults(images)
   }
@@ -8,29 +9,79 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function displayResults(images) {
   const container = document.getElementById('results-container')
   images.forEach((image) => {
-    const imageContainer = document.createElement('div')
-    imageContainer.classList.add('image-container')
+    const div = document.createElement('div')
+    div.className = 'image-container'
 
-    const imageElement = document.createElement('img')
-    imageElement.src = image.src
-    imageElement.alt = image.alt_old
-    imageElement.classList.add('image')
+    createElement('img', { src: image.src }, null, div)
 
-    const altTextElement = document.createElement('p')
-    altTextElement.textContent = image.alt_new
-    altTextElement.classList.add('alt-text')
+    const imageData = document.createElement('div')
+    imageData.className = 'image-data-container'
+    div.appendChild(imageData)
 
-    const oldTextElement = document.createElement('p')
-    oldTextElement.textContent = image.alt_old
-    oldTextElement.classList.add('alt-text')
+    createElement('p', null, 'Alt Text: ', imageData)
 
-    const contextElement = document.createElement('p')
-    contextElement.textContent = image.context
-    contextElement.classList.add('context')
+    const altText = document.createElement('p')
+    altText.id = 'altText'
+    if (image.alt_old === null) {
+      altText.innerText = 'No Alt-Text'
+    } else if (image.alt_old.trim() === '') {
+      altText.innerText = 'Empty Alt-Text'
+    } else {
+      altText.innerText = image.alt_old
+    }
+    imageData.appendChild(altText)
 
-    imageContainer.appendChild(imageElement)
-    imageContainer.appendChild(altTextElement)
-    imageContainer.appendChild(contextElement)
-    container.appendChild(imageContainer)
+    createElement('p', null, 'Context: ', imageData)
+
+    createElement(
+      'p',
+      { id: 'context' },
+      image.context,
+      imageData,
+      'No context available'
+    )
+
+    createElement('p', null, 'Area: ', imageData)
+
+    createElement(
+      'p',
+      { id: 'area' },
+      image.area,
+      imageData,
+      'No area available'
+    )
+
+    createElement('p', null, 'Is Logo: ', imageData)
+
+    createElement(
+      'p',
+      { id: 'isLogo' },
+      image.isLogo,
+      imageData,
+      'Is not a logo'
+    )
+
+    createElement('p', null, 'Is Icon: ', imageData)
+
+    createElement(
+      'p',
+      { id: 'isIcon' },
+      image.isIcon,
+      imageData,
+      'Is not an icon'
+    )
+
+    container.appendChild(div)
   })
+}
+
+function createElement(type, attributes, text, parent, fallbackText) {
+  const element = document.createElement(type)
+  for (const key in attributes) {
+    element.setAttribute(key, attributes[key])
+  }
+  if (text) {
+    element.innerText = text ? text : fallbackText
+  }
+  parent.appendChild(element)
 }

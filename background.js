@@ -40,6 +40,9 @@ async function generateAltTexts(imagesData) {
       alt_old: imageData.alt,
       alt_new: 'Alt text',
       context: imageData.context,
+      area: imageData.area,
+      isLogo: imageData.isLogo,
+      isIcon: imageData.isIcon,
     })
   })
   return finishedImages // Array von Objekten der vorherigen Bilderdaten mit den neuen Alternativtexten
