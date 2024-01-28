@@ -15,8 +15,18 @@ document.getElementById('change-shortcut').onclick = (event) => {
   event.preventDefault()
 }
 
-// Speichern des API-Keys in Speicher des Browsers
+// Speichern des API-Keys im Speicher des Browsers
 document.getElementById('save-btn').addEventListener('click', function () {
   const apiKey = document.getElementById('api-key-input').value
   // Hier Code, um den API-Key zu speichern
+})
+
+// Event-Listener für den Button zum Starten des Authoring-Modus
+// Sendet eine Nachricht an das Content-Script, um die Bilder und den Kontext zu sammeln
+document.getElementById('authormode').addEventListener('click', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, {
+      message: 'collect_images_and_context',
+    })
+  })
 })
