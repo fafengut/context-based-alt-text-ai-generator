@@ -1,17 +1,19 @@
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === 'collect_images_and_context') {
     const imagesData = []
     const images = document.getElementsByTagName('img')
     for (const image of images) {
       const imageDetails = await checkImage(image)
-      imagesData.push({
-        src: imageDetails.src,
-        alt: imageDetails.alt,
-        context: imageDetails.possibleText,
-        area: imageDetails.area,
-        isLogo: imageDetails.isLogo,
-        isIcon: imageDetails.isIcon,
-      })
+      if (imageDetails) {
+        imagesData.push({
+          src: imageDetails.src,
+          alt: imageDetails.alt,
+          context: imageDetails.possibleText,
+          area: imageDetails.area,
+          isLogo: imageDetails.isLogo,
+          isIcon: imageDetails.isIcon,
+        })
+      }
     }
     chrome.runtime.sendMessage({ message: 'process_images', imagesData })
   }
@@ -26,43 +28,42 @@ async function checkImage(image) {
   const alt = image.getAttribute('alt')
   const isDecodedImage = src && src.startsWith('data:image/')
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
+  const isAdvertisement = checkIfAdvertisement(image)
 
-  if (!isDecodedImage && !isPixel) {
+  if (!isDecodedImage && !isPixel && !isAdvertisement) {
     const absoluteSrc =
       src && src.startsWith('http')
         ? src
         : new URL(src, window.location.href).href
 
-    const reachable = await isImageReachable(absoluteSrc)
+    try {
+      const reachable = await isImageReachable(absoluteSrc)
 
-    const { area, isLogo, isIcon } = checkImageDetails(image)
+      const { area, isLogo, isIcon } = checkImageDetails(image)
 
-    let possibleText = ''
-    if (isLogo || isIcon) {
-      possibleText = 'Not needed for logos or icons'
-    } else {
-      possibleText = findTextParent(image)
-    }
-
-    if (reachable) {
-      return {
-        src: absoluteSrc,
-        alt: alt,
-        possibleText: possibleText ? possibleText : 'no Text',
-        area: area,
-        isLogo: isLogo,
-        isIcon: isIcon,
+      let possibleText = ''
+      if (isLogo || isIcon) {
+        possibleText = 'Not needed for logos or icons'
+      } else {
+        possibleText = findTextParent(image)
       }
+
+      if (reachable) {
+        return {
+          src: absoluteSrc,
+          alt: alt,
+          possibleText: possibleText ? possibleText : 'no Text',
+          area: area,
+          isLogo: isLogo,
+          isIcon: isIcon,
+        }
+      }
+    } catch (error) {
+      // Handle the error here
+      console.error(error)
     }
   }
-  return {
-    src: src,
-    alt: alt,
-    possibleText: 'no Text',
-    area: false,
-    isLogo: false,
-    isIcon: false,
-  }
+  return undefined
 }
 
 // Hilfsfunktion, um zu prüfen, ob ein Bild erreichbar ist
@@ -73,6 +74,8 @@ async function isImageReachable(src) {
     img.onload = () => resolve(true)
     img.onerror = () => resolve(false)
     img.src = src
+  }).catch((error) => {
+    console.error(error)
   })
 }
 
@@ -85,21 +88,27 @@ function checkSiblingText(element) {
   let prevSibling = element.previousElementSibling
   let nextSiblingText = ''
   let prevSiblingText = ''
+  let counter = 0 // Add a counter variable
+  const maxDepth = 2 // Set a depth limit
 
-  // Check next siblings
-  while (nextSibling && !nextSiblingText) {
+  // Check next siblings within a depth limit
+  while (nextSibling && !nextSiblingText && counter < maxDepth) {
     if (nextSibling.textContent.trim().length > 0) {
       nextSiblingText = nextSibling.textContent.trim()
     }
     nextSibling = nextSibling.nextElementSibling
+    counter++ // Increment the counter
   }
 
-  // Check previous siblings
-  while (prevSibling && !prevSiblingText) {
+  counter = 0 // Reset the counter
+
+  // Check previous siblings within a depth limit
+  while (prevSibling && !prevSiblingText && counter < maxDepth) {
     if (prevSibling.textContent.trim().length > 0) {
       prevSiblingText = prevSibling.textContent.trim()
     }
     prevSibling = prevSibling.previousElementSibling
+    counter++ // Increment the counter
   }
 
   let combinedText = ''
@@ -114,14 +123,21 @@ function checkSiblingText(element) {
 // Wenn kein Text gefunden wird, wird false zurückgegeben
 function findTextParent(element) {
   let parent = element.parentElement
-  while (parent && parent.tagName !== 'BODY') {
-    if (parent.textContent.trim().length > 0) {
-      return parent.textContent.trim()
+  let counter = 0 // Add a counter variable
+  const maxDepth = 2 // Set a depth limit
+
+  while (parent && parent.tagName !== 'BODY' && counter < maxDepth) {
+    const parentText = parent.textContent.trim()
+    const siblingText = checkSiblingText(parent)
+
+    if (parentText.length > 0) {
+      return parentText
     }
-    if (checkSiblingText(parent)) {
-      return checkSiblingText(parent)
+    if (siblingText) {
+      return siblingText
     }
     parent = parent.parentElement
+    counter++ // Increment the counter
   }
   return false
 }
@@ -135,8 +151,13 @@ function checkImageDetails(element) {
   const isSmall = element.naturalWidth <= 50 && element.naturalHeight <= 50
 
   let counter = 0 // Add a counter variable
+  const maxDepth = 2 // Set a depth limit
 
-  while (currentElement && currentElement.tagName !== 'BODY' && counter < 2) {
+  while (
+    currentElement &&
+    currentElement.tagName !== 'BODY' &&
+    counter < maxDepth
+  ) {
     // Check the counter
     const tagName = currentElement.tagName.toLowerCase()
     const id = currentElement.id.toLowerCase()
@@ -155,7 +176,10 @@ function checkImageDetails(element) {
     if (
       !isLogo &&
       (id.includes('logo') ||
-        Array.from(classList).some((cls) => cls.toLowerCase().includes('logo')))
+        Array.from(classList).some((cls) =>
+          cls.toLowerCase().includes('logo')
+        ) ||
+        (src && src.toLowerCase().includes('logo')))
     ) {
       isLogo = true
     }
@@ -164,7 +188,10 @@ function checkImageDetails(element) {
       !isIcon &&
       (isSmall ||
         id.includes('icon') ||
-        Array.from(classList).some((cls) => cls.toLowerCase().includes('icon')))
+        Array.from(classList).some((cls) =>
+          cls.toLowerCase().includes('icon')
+        ) ||
+        (src && src.toLowerCase().includes('icon')))
     ) {
       isIcon = true
     }
@@ -178,4 +205,75 @@ function checkImageDetails(element) {
   }
 
   return { area, isLogo, isIcon }
+}
+
+function checkIfAdvertisement(image) {
+  const adKeywords = [
+    'werbung',
+    'rabatt',
+    'angebot',
+    'aktion',
+    'anzeige',
+    'advertisement',
+    'promo',
+    'discount',
+    'offer',
+    'sale',
+    'sponsor',
+    'promotion',
+  ]
+
+  // Check if the src or alt attribute contains any of the ad keywords
+  const src = image.getAttribute('src')
+  const alt = image.getAttribute('alt')
+  if (
+    adKeywords.some(
+      (keyword) =>
+        (src && src.toLowerCase().includes(keyword)) ||
+        (alt && alt.toLowerCase().includes(keyword))
+    )
+  ) {
+    return true
+  }
+
+  // Check if the class or id of the image or its parent elements contain any of the ad keywords
+  let currentElement = image
+  while (currentElement && currentElement.tagName !== 'BODY') {
+    // Add condition to check if current element is the body tag
+    const pseudoContent = getBeforeOrAfterContent(currentElement)
+    if (
+      adKeywords.some(
+        (keyword) =>
+          pseudoContent.before.includes(keyword) ||
+          pseudoContent.after.includes(keyword)
+      )
+    ) {
+      return true
+    }
+
+    const classList = Array.from(currentElement.classList).map((cls) =>
+      cls.toLowerCase()
+    )
+    const id = currentElement.id.toLowerCase()
+    if (
+      adKeywords.some(
+        (keyword) => classList.includes(keyword) || id.includes(keyword)
+      )
+    ) {
+      return true
+    }
+
+    currentElement = currentElement.parentElement
+  }
+
+  return false
+}
+
+function getBeforeOrAfterContent(element) {
+  const beforeCSS = getComputedStyle(element, '::before').content.toLowerCase()
+  const afterCSS = getComputedStyle(element, '::after').content.toLowerCase()
+  return {
+    before: beforeCSS,
+    after: afterCSS,
+  }
 }
