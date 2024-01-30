@@ -1,5 +1,6 @@
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === 'collect_images_and_context') {
+    await scrollToBottom()
     const imagesData = []
     const images = document.getElementsByTagName('img')
     for (const image of images) {
@@ -19,14 +20,74 @@ chrome.runtime.onMessage.addListener(async (request) => {
   }
 })
 
+function scrollToBottom() {
+  return new Promise((resolve) => {
+    // Replace the following line with your actual scrolling logic
+    const distance = 100
+    const delay = 50
+
+    let totalHeight = 0
+    let timer = setInterval(() => {
+      const scrollHeight = document.body.scrollHeight
+      window.scrollBy(0, distance)
+      totalHeight += distance
+
+      if (totalHeight >= scrollHeight) {
+        clearInterval(timer)
+        resolve() // Resolve the promise after scrolling has finished
+      }
+    }, delay)
+    // Simulate a delay of 1 second for demonstration purposes
+    // setTimeout(resolve, 1000)
+  })
+}
+
 // Hilfsfunktion, um den Kontext eines Bildes zu extrahieren
 // Geht davon aus, dass der Kontext in einem Element vor oder nach dem Bild steht
 // oder in einem Elternelement des Bildes
 // Gibt den Kontext als String zurück
 async function checkImage(image) {
-  const src = image.getAttribute('src')
+  let src = image.getAttribute('src')
   const alt = image.getAttribute('alt')
-  const isDecodedImage = src && src.startsWith('data:image/')
+  let isDecodedImage = src && src.startsWith('data:image/')
+
+  if (isDecodedImage) {
+    const srcset = image.getAttribute('srcset')
+
+    const hasSrcset = srcset !== null
+    const siblingWithSrcset = Array.from(image.parentNode.children)
+      .filter(
+        (sibling) =>
+          sibling.tagName === 'SOURCE' &&
+          sibling.getAttribute('srcset') !== null
+      )
+      .reduce((prev, curr) => {
+        const prevMedia = prev?.getAttribute('media')
+        const currMedia = curr?.getAttribute('media')
+        if (!prev) {
+          return curr
+        }
+        if (!prevMedia || !currMedia) {
+          return prev
+        }
+        const prevMediaSize = parseMediaSize(prevMedia)
+        const currMediaSize = parseMediaSize(currMedia)
+        return prevMediaSize > currMediaSize ? prev : curr
+      }, null)
+
+    if (hasSrcset) {
+      isDecodedImage = false
+      src = srcset.split(' ').filter((e) => e.startsWith('http'))
+      src = src[src.length - 1]
+    } else if (siblingWithSrcset) {
+      isDecodedImage = false
+      src = siblingWithSrcset
+        .getAttribute('srcset')
+        .split(' ')
+        .filter((e) => e.startsWith('http'))
+      src = src[src.length - 1]
+    }
+  }
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
   const isAdvertisement = checkIfAdvertisement(image)
 
@@ -57,6 +118,8 @@ async function checkImage(image) {
           isLogo: isLogo,
           isIcon: isIcon,
         }
+      } else {
+        console.log('Image not reachable:', absoluteSrc)
       }
     } catch (error) {
       // Handle the error here
@@ -64,6 +127,20 @@ async function checkImage(image) {
     }
   }
   return undefined
+}
+
+function parseMediaSize(media) {
+  const match = media.match(/\((.*?)\)/)
+  if (match) {
+    const size = match[1].split(':')
+    if (size.length === 2) {
+      const width = parseInt(size[1])
+      if (!isNaN(width)) {
+        return width
+      }
+    }
+  }
+  return 0
 }
 
 // Hilfsfunktion, um zu prüfen, ob ein Bild erreichbar ist
@@ -148,7 +225,11 @@ function checkImageDetails(element) {
   let area = false
   let isLogo = src && src.toLowerCase().includes('logo')
   let isIcon = src && src.toLowerCase().includes('icon')
-  const isSmall = element.naturalWidth <= 50 && element.naturalHeight <= 50
+  const isSmall =
+    element.naturalWidth <= 50 &&
+    element.naturalWidth > 1 &&
+    element.naturalHeight <= 50 &&
+    element.naturalHeight > 1
 
   let counter = 0 // Add a counter variable
   const maxDepth = 2 // Set a depth limit
