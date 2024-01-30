@@ -52,41 +52,7 @@ async function checkImage(image) {
   let isDecodedImage = src && src.startsWith('data:image/')
 
   if (isDecodedImage) {
-    const srcset = image.getAttribute('srcset')
-
-    const hasSrcset = srcset !== null
-    const siblingWithSrcset = Array.from(image.parentNode.children)
-      .filter(
-        (sibling) =>
-          sibling.tagName === 'SOURCE' &&
-          sibling.getAttribute('srcset') !== null
-      )
-      .reduce((prev, curr) => {
-        const prevMedia = prev?.getAttribute('media')
-        const currMedia = curr?.getAttribute('media')
-        if (!prev) {
-          return curr
-        }
-        if (!prevMedia || !currMedia) {
-          return prev
-        }
-        const prevMediaSize = parseMediaSize(prevMedia)
-        const currMediaSize = parseMediaSize(currMedia)
-        return prevMediaSize > currMediaSize ? prev : curr
-      }, null)
-
-    if (hasSrcset) {
-      isDecodedImage = false
-      src = srcset.split(' ').filter((e) => e.startsWith('http'))
-      src = src[src.length - 1]
-    } else if (siblingWithSrcset) {
-      isDecodedImage = false
-      src = siblingWithSrcset
-        .getAttribute('srcset')
-        .split(' ')
-        .filter((e) => e.startsWith('http'))
-      src = src[src.length - 1]
-    }
+    ;({ src, isDecodedImage } = checkSrcset(image, src, isDecodedImage))
   }
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
   const isAdvertisement = checkIfAdvertisement(image)
@@ -127,6 +93,44 @@ async function checkImage(image) {
     }
   }
   return undefined
+}
+
+function checkSrcset(image, src, isDecodedImage) {
+  const srcset = image.getAttribute('srcset')
+
+  const hasSrcset = srcset !== null
+  const siblingWithSrcset = Array.from(image.parentNode.children)
+    .filter(
+      (sibling) =>
+        sibling.tagName === 'SOURCE' && sibling.getAttribute('srcset') !== null
+    )
+    .reduce((prev, curr) => {
+      const prevMedia = prev?.getAttribute('media')
+      const currMedia = curr?.getAttribute('media')
+      if (!prev) {
+        return curr
+      }
+      if (!prevMedia || !currMedia) {
+        return prev
+      }
+      const prevMediaSize = parseMediaSize(prevMedia)
+      const currMediaSize = parseMediaSize(currMedia)
+      return prevMediaSize > currMediaSize ? prev : curr
+    }, null)
+
+  if (hasSrcset) {
+    isDecodedImage = false
+    src = srcset.split(' ').filter((e) => e.startsWith('http'))
+    return { src: src[src.length - 1], isDecodedImage }
+  } else if (siblingWithSrcset) {
+    isDecodedImage = false
+    src = siblingWithSrcset
+      .getAttribute('srcset')
+      .split(' ')
+      .filter((e) => e.startsWith('http'))
+    return { src: src[src.length - 1], isDecodedImage }
+  }
+  return { src, isDecodedImage }
 }
 
 function parseMediaSize(media) {
