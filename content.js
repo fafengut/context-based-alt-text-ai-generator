@@ -4,14 +4,16 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const images = document.getElementsByTagName('img')
     for (const image of images) {
       const imageDetails = await checkImage(image)
-      imagesData.push({
-        src: imageDetails.src,
-        alt: imageDetails.alt,
-        context: imageDetails.possibleText,
-        area: imageDetails.area,
-        isLogo: imageDetails.isLogo,
-        isIcon: imageDetails.isIcon,
-      })
+      if (imageDetails) {
+        imagesData.push({
+          src: imageDetails.src,
+          alt: imageDetails.alt,
+          context: imageDetails.possibleText,
+          area: imageDetails.area,
+          isLogo: imageDetails.isLogo,
+          isIcon: imageDetails.isIcon,
+        })
+      }
     }
     chrome.runtime.sendMessage({ message: 'process_images', imagesData })
   }
@@ -26,8 +28,9 @@ async function checkImage(image) {
   const alt = image.getAttribute('alt')
   const isDecodedImage = src && src.startsWith('data:image/')
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
+  const isAdvertisement = checkIfAdvertisement(image)
 
-  if (!isDecodedImage && !isPixel) {
+  if (!isDecodedImage && !isPixel && !isAdvertisement) {
     const absoluteSrc =
       src && src.startsWith('http')
         ? src
@@ -54,14 +57,6 @@ async function checkImage(image) {
         isIcon: isIcon,
       }
     }
-  }
-  return {
-    src: src,
-    alt: alt,
-    possibleText: 'no Text',
-    area: false,
-    isLogo: false,
-    isIcon: false,
   }
 }
 
@@ -178,4 +173,75 @@ function checkImageDetails(element) {
   }
 
   return { area, isLogo, isIcon }
+}
+
+function checkIfAdvertisement(image) {
+  const adKeywords = [
+    'werbung',
+    'rabatt',
+    'angebot',
+    'aktion',
+    'anzeige',
+    'advertisement',
+    'promo',
+    'discount',
+    'offer',
+    'sale',
+    'sponsor',
+    'promotion',
+  ]
+
+  // Check if the src or alt attribute contains any of the ad keywords
+  const src = image.getAttribute('src')
+  const alt = image.getAttribute('alt')
+  if (
+    adKeywords.some(
+      (keyword) =>
+        (src && src.toLowerCase().includes(keyword)) ||
+        (alt && alt.toLowerCase().includes(keyword))
+    )
+  ) {
+    return true
+  }
+
+  // Check if the class or id of the image or its parent elements contain any of the ad keywords
+  let currentElement = image
+  while (currentElement) {
+    const pseudoContent = getBeforeOrAfterContent(currentElement)
+    if (
+      adKeywords.some(
+        (keyword) =>
+          pseudoContent.before.includes(keyword) ||
+          pseudoContent.after.includes(keyword)
+      )
+    ) {
+      return true
+    }
+
+    const classList = Array.from(currentElement.classList).map((cls) =>
+      cls.toLowerCase()
+    )
+    const id = currentElement.id.toLowerCase()
+    if (
+      adKeywords.some(
+        (keyword) => classList.includes(keyword) || id.includes(keyword)
+      )
+    ) {
+      currentElement.style.border = '5px solid red'
+      return true
+    }
+
+    currentElement = currentElement.parentElement
+  }
+
+  return false
+}
+
+function getBeforeOrAfterContent(element) {
+  const beforeCSS = getComputedStyle(element, '::before').content.toLowerCase()
+  const afterCSS = getComputedStyle(element, '::after').content.toLowerCase()
+  return {
+    before: beforeCSS,
+    after: afterCSS,
+  }
 }
