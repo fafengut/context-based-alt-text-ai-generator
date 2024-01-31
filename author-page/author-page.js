@@ -1,13 +1,45 @@
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === 'display_results') {
     document.getElementById('loading').style.display = 'none'
-    const images = request.images
-    displayResults(images)
+    displayResults(request.images, request.metaInformation)
   }
 })
 
-function displayResults(images) {
+function displayResults(images, metaInformation) {
   const container = document.getElementById('results-container')
+
+  const div = document.createElement('div')
+  div.className = 'meta-container'
+
+  createElement('p', null, 'Meta Title: ', div)
+  createElement(
+    'p',
+    null,
+    metaInformation.title,
+    div,
+    'No meta title available'
+  )
+
+  createElement('p', null, 'Meta Description: ', div)
+  createElement(
+    'p',
+    null,
+    metaInformation.description,
+    div,
+    'No meta description available'
+  )
+
+  createElement('p', null, 'Meta Keywords: ', div)
+  createElement(
+    'p',
+    null,
+    metaInformation.keywords,
+    div,
+    'No meta keywords available'
+  )
+
+  container.appendChild(div)
+
   images.forEach((image) => {
     const div = document.createElement('div')
     div.className = 'image-container'
@@ -21,7 +53,6 @@ function displayResults(images) {
     createElement('p', null, 'Alt Text: ', imageData)
 
     const altText = document.createElement('p')
-    altText.id = 'altText'
     if (image.alt_old === null) {
       altText.innerText = 'No Alt-Text'
     } else if (image.alt_old.trim() === '') {
@@ -33,43 +64,18 @@ function displayResults(images) {
 
     createElement('p', null, 'Context: ', imageData)
 
-    createElement(
-      'p',
-      { id: 'context' },
-      image.context,
-      imageData,
-      'No context available'
-    )
+    createElement('p', null, image.context, imageData, 'No context available')
 
     createElement('p', null, 'Area: ', imageData)
 
-    createElement(
-      'p',
-      { id: 'area' },
-      image.area,
-      imageData,
-      'No area available'
-    )
+    createElement('p', null, image.area, imageData, 'No area available')
 
     createElement('p', null, 'Is Logo: ', imageData)
 
-    createElement(
-      'p',
-      { id: 'isLogo' },
-      image.isLogo,
-      imageData,
-      'Is not a logo'
-    )
+    createElement('p', null, image.isLogo, imageData, 'Is not a logo')
 
     createElement('p', null, 'Is Icon: ', imageData)
-
-    createElement(
-      'p',
-      { id: 'isIcon' },
-      image.isIcon,
-      imageData,
-      'Is not an icon'
-    )
+    createElement('p', null, image.isIcon, imageData, 'Is not an icon')
 
     container.appendChild(div)
   })
