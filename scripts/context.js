@@ -1,95 +1,141 @@
-// Hilfsfunktion, um den Text der Geschwister eines Elements zu extrahieren
-// Gibt den Text als String zurück
-// Wenn kein Text gefunden wird, wird false zurückgegeben
-// Der Text wird mit <br><br> getrennt, wenn er von mehreren Geschwistern kommt
-function checkSiblingText(element) {
-  let nextSibling = element.nextElementSibling
+function findTextParent(element) {
+  let parent = element.parentElement
+  const minWordCount = 10
+  let parentText = ''
+  let siblingText = ''
+
+  while (parent && parent.tagName !== 'BODY') {
+    let parentTextContent = parent.textContent.trim()
+    const children = parent.children
+    for (let i = 0; i < children.length; i++) {
+      parentTextContent = parentTextContent.replace(children[i].textContent, '') // Subtract the child text content
+    }
+    if (
+      parentTextContent.length < minWordCount &&
+      !checkIfHtmlString(parentTextContent)
+    ) {
+      parent.style.border = '3px solid red'
+      parentText = parentText + ' ' + parentTextContent
+    }
+
+    siblingText = checkSibling(parent)
+
+    if (parentText.trim().split(' ').length > minWordCount) {
+      return parentText
+    }
+
+    if (siblingText && siblingText.trim().split(' ').length > minWordCount) {
+      return siblingText
+    }
+    parent = parent.parentElement
+  }
+  return false
+}
+
+function checkSibling(element) {
   let prevSibling = element.previousElementSibling
-  let nextSiblingText = ''
-  let prevSiblingText = ''
-  let counter = 0 // Add a counter variable
-  const minWordCount = 10 // Set the minimum word count
+  let nextSibling = element.nextElementSibling
 
-  // Check next siblings and their children until minimum word count is reached
-  while (nextSibling && nextSiblingText.split(' ').length < minWordCount) {
-    if (
-      nextSibling.textContent.trim().length > 0 &&
-      nextSibling.tagName !== 'NOSCRIPT'
-    ) {
-      nextSiblingText = nextSibling.textContent.trim()
-    } else {
-      const children = nextSibling.children
-      for (let i = 0; i < children.length; i++) {
-        const childText = children[i].textContent.trim()
-        if (childText.length > 0 && children[i].tagName !== 'NOSCRIPT') {
-          nextSiblingText = childText
-          break
-        }
-      }
-    }
-    nextSibling = nextSibling.nextElementSibling
-    counter++ // Increment the counter
-  }
-
-  counter = 0 // Reset the counter
-
-  // Check previous siblings and their children until minimum word count is reached
-  while (prevSibling && prevSiblingText.split(' ').length < minWordCount) {
-    if (
-      prevSibling.textContent.trim().length > 0 &&
-      prevSibling.tagName !== 'NOSCRIPT'
-    ) {
-      prevSiblingText = prevSibling.textContent.trim()
-    } else {
-      const children = prevSibling.children
-      for (let i = 0; i < children.length; i++) {
-        const childText = children[i].textContent.trim()
-        if (childText.length > 0 && children[i].tagName !== 'NOSCRIPT') {
-          prevSiblingText = childText
-          break
-        }
-      }
-    }
-    prevSibling = prevSibling.previousElementSibling
-    counter++ // Increment the counter
-  }
+  const prevSiblingText = checkSiblingText(prevSibling, 'prev')
+  const nextSiblingText = checkSiblingText(nextSibling, 'next')
 
   let combinedText = ''
-  if (prevSiblingText) combinedText += prevSiblingText + '<br><br>'
-  if (nextSiblingText) combinedText += nextSiblingText
+  if (prevSiblingText) combinedText += prevSiblingText + '\n'
+  if (nextSiblingText) combinedText += nextSiblingText + '\n'
 
   return combinedText.trim() || false
 }
 
-// Hilfsfunktion, um den Text des Elternelements eines Elements zu extrahieren
-// Gibt den Text als String zurück
-// Wenn kein Text gefunden wird, wird false zurückgegeben
-function findTextParent(element) {
-  let parent = element.parentElement
-  let counter = 0
+function checkSiblingText(element, direction) {
   const minWordCount = 10
+  let siblingText = ''
+  let sibling = element
+  let processedTexts = new Set()
 
-  while (
-    parent &&
-    parent.tagName !== 'BODY' &&
-    parent.textContent.trim().split(' ').length < minWordCount
-  ) {
-    const parentText = parent.textContent.trim()
-    const siblingText = checkSiblingText(parent)
+  while (sibling && siblingText.split(' ').length < minWordCount) {
+    if (sibling.getAttribute('data-checked') === 'true') {
+      // If the sibling has data-checked attribute set to true, skip it
+      sibling =
+        direction === 'next'
+          ? sibling.nextElementSibling
+          : sibling.previousElementSibling
+      continue
+    }
 
+    siblingText += checkChildText(sibling, processedTexts) // Check the child text
+
+    // If all children are checked, mark the parent as checked
     if (
-      parentText.length > 0 &&
-      !parentText.startsWith('<') &&
-      parent.tagName !== 'NOSCRIPT' &&
-      parent.children[0].tagName !== 'NOSCRIPT'
+      sibling.querySelectorAll('*').length ===
+      sibling.querySelectorAll('[data-checked]').length
     ) {
-      return parentText
+      sibling.setAttribute('data-checked', 'true')
     }
-    if (siblingText) {
-      return siblingText
-    }
-    parent = parent.parentElement
-    counter++
+
+    sibling =
+      direction === 'next'
+        ? sibling.nextElementSibling
+        : sibling.previousElementSibling
   }
-  return false
+
+  return siblingText.trim() || false
+}
+
+function checkChildText(element, processedTexts) {
+  if (element.getAttribute('data-checked') === 'true') {
+    // If the element has data-checked attribute set to true, return an empty string
+    return ''
+  }
+
+  let childText = ''
+  const children = element.children
+  let allChildrenChecked = true // Set allChildrenChecked to false if there are no children
+
+  for (let i = 0; i < children.length; i++) {
+    childText += checkChildText(children[i], processedTexts) // Recursively check the children
+  }
+
+  if (children.length === 0) {
+    allChildrenChecked = false // Set allChildrenChecked to false if there are no children
+  } else {
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].getAttribute('data-checked') !== 'true') {
+        allChildrenChecked = false // Set the flag to false if any child is not checked
+        break
+      }
+    }
+  }
+
+  if (allChildrenChecked) {
+    element.setAttribute('data-checked', 'true') // Mark the element as checked
+    return childText
+  }
+
+  const elementText = element.textContent.trim()
+  if (
+    elementText.split(' ').length > 2 &&
+    !checkIfSourceText(elementText) &&
+    !checkIfHtmlString(elementText) &&
+    !processedTexts.has(elementText) // Check if the text has already been processed
+  ) {
+    element.style.border = '3px solid blue'
+    childText += ' ' + elementText
+    processedTexts.add(elementText) // Add the text to the set of processed texts
+  }
+
+  element.setAttribute('data-checked', 'true') // Mark the element as checked
+
+  return childText
+}
+
+function checkIfSourceText(textContent) {
+  const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
+  return sourceKeywords.some((keyword) => textContent.includes(keyword))
+}
+
+// Check if the text contains HTML tags
+function checkIfHtmlString(textContent) {
+  const htmlTagsRegex =
+    /<(?!\/?\s*\d+\s*<\s*\d+\s*&&\s*\d+\s*>\s*\d+\s*\/?\s*>)[^>]+>/g
+  return htmlTagsRegex.test(textContent)
 }
