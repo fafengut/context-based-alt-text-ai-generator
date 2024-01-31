@@ -1,33 +1,21 @@
 function findTextParent(element) {
   let parent = element.parentElement
-  const minWordCount = 10
-  let parentText = ''
+  const minWordCount = 3
   let siblingText = ''
+  let level = 0
 
-  while (parent && parent.tagName !== 'BODY') {
-    let parentTextContent = parent.textContent.trim()
-    const children = parent.children
-    for (let i = 0; i < children.length; i++) {
-      parentTextContent = parentTextContent.replace(children[i].textContent, '') // Subtract the child text content
-    }
-    if (
-      parentTextContent.length < minWordCount &&
-      !checkIfHtmlString(parentTextContent)
-    ) {
-      parent.style.border = '3px solid red'
-      parentText = parentText + ' ' + parentTextContent
-    }
-
+  while (parent && parent.tagName !== 'BODY' && level < 5) {
     siblingText = checkSibling(parent)
 
-    if (parentText.trim().split(' ').length > minWordCount) {
-      return parentText
-    }
-
     if (siblingText && siblingText.trim().split(' ').length > minWordCount) {
+      parent.setAttribute('data-checked', 'true')
+      return siblingText
+    }
+    if (parent.parentElement.getAttribute('data-checked') === 'true') {
       return siblingText
     }
     parent = parent.parentElement
+    level++
   }
   return false
 }
@@ -47,7 +35,7 @@ function checkSibling(element) {
 }
 
 function checkSiblingText(element, direction) {
-  const minWordCount = 10
+  const minWordCount = 5
   let siblingText = ''
   let sibling = element
   let processedTexts = new Set()
@@ -62,7 +50,7 @@ function checkSiblingText(element, direction) {
       continue
     }
 
-    siblingText += checkChildText(sibling, processedTexts) // Check the child text
+    siblingText += checkChildText(sibling, processedTexts) + '\n' // Check the child text
 
     // If all children are checked, mark the parent as checked
     if (
@@ -118,8 +106,8 @@ function checkChildText(element, processedTexts) {
     !checkIfHtmlString(elementText) &&
     !processedTexts.has(elementText) // Check if the text has already been processed
   ) {
-    element.style.border = '3px solid blue'
-    childText += ' ' + elementText
+    // element.style.border = '3px solid blue'
+    childText += elementText + '\n'
     processedTexts.add(elementText) // Add the text to the set of processed texts
   }
 
