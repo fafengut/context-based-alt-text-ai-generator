@@ -22,6 +22,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             chrome.tabs.sendMessage(resultsTabId, {
               message: 'display_results',
               images: images,
+              metaInformation: request.metaInformation,
             })
           }, 1000)
         }

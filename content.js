@@ -3,6 +3,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     await scrollToBottom()
     const imagesData = []
     const images = document.getElementsByTagName('img')
+    const metaInformation = getMetaInformation()
     for (const image of images) {
       const imageDetails = await checkImage(image)
       if (imageDetails) {
@@ -16,7 +17,11 @@ chrome.runtime.onMessage.addListener(async (request) => {
         })
       }
     }
-    chrome.runtime.sendMessage({ message: 'process_images', imagesData })
+    chrome.runtime.sendMessage({
+      message: 'process_images',
+      imagesData,
+      metaInformation,
+    })
   }
 })
 
@@ -65,6 +70,7 @@ async function checkImage(image) {
       const { area, isLogo, isIcon } = checkImageDetails(image)
 
       let possibleText = ''
+      let metaInformation = {}
       if (isLogo || isIcon) {
         possibleText = 'Not needed for logos or icons'
       } else {
@@ -79,6 +85,7 @@ async function checkImage(image) {
           area: area,
           isLogo: isLogo,
           isIcon: isIcon,
+          metaInformation: metaInformation,
         }
       } else {
         console.log('Image not reachable:', absoluteSrc)

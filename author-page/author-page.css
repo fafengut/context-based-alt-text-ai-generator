@@ -29,9 +29,11 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
+  font-size: 1.4rem;
 }
 
-.image-container {
+.image-container,
+.meta-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
@@ -39,6 +41,10 @@ h1 {
   background-color: black;
   color: white;
   padding: 20px;
+}
+
+.meta-container {
+  grid-template-columns: 1fr 4fr;
 }
 
 .image-container img {

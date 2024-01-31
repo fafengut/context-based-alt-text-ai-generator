@@ -127,3 +127,21 @@ function checkIfHtmlString(textContent) {
     /<(?!\/?\s*\d+\s*<\s*\d+\s*&&\s*\d+\s*>\s*\d+\s*\/?\s*>)[^>]+>/g
   return htmlTagsRegex.test(textContent)
 }
+
+function getMetaInformation() {
+  const title = document.querySelector('title').textContent
+    ? document.querySelector('title').textContent
+    : 'No title available'
+  const description = document.querySelector('meta[name="description"]')
+    ? document.querySelector('meta[name="description"]').getAttribute('content')
+    : 'No description available'
+  const keywords = document.querySelector('meta[name="keywords"]')
+    ? document.querySelector('meta[name="keywords"]').getAttribute('content')
+    : 'No keywords available'
+
+  return {
+    title: title,
+    description: description,
+    keywords: keywords,
+  }
+}
