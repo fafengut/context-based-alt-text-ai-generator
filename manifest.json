@@ -15,6 +15,18 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "js": ["/scripts/image.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["/scripts/advertisment.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["/scripts/context.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
   ],
@@ -35,5 +47,11 @@
       },
       "description": "Generiere Alternativtexte für alle Bilder"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["scripts/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

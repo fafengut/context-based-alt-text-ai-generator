@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
   if (request.message === 'display_results') {
     document.getElementById('loading').style.display = 'none'
     const images = request.images
