@@ -62,6 +62,16 @@ function displayResults(images, metaInformation) {
     }
     imageData.appendChild(altText)
 
+    createElement('p', null, 'New Alt Text: ', imageData)
+
+    createElement(
+      'p',
+      null,
+      image.alt_new,
+      imageData,
+      'No new alt text available'
+    )
+
     createElement('p', null, 'Context: ', imageData)
 
     createElement('p', null, image.context, imageData, 'No context available')
