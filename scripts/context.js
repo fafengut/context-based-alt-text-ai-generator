@@ -99,7 +99,8 @@ function checkChildText(element, processedTexts) {
   // If the element is a script or style element, return an empty string
   if (
     element.tagName.toUpperCase() === 'SCRIPT' ||
-    element.tagName.toUpperCase() === 'STYLE'
+    element.tagName.toUpperCase() === 'STYLE' ||
+    element.tagName.toUpperCase() === 'FORM'
   ) {
     element.setAttribute('data-checked', 'true') // Mark the element as checked
     return ''
