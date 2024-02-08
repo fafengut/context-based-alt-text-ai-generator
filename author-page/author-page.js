@@ -62,7 +62,7 @@ function displayResults(images, metaInformation) {
     }
     imageData.appendChild(altText)
 
-    createElement('p', null, 'New Alt Text: ', imageData)
+    createElement('p', null, 'Neuer Alt Text: ', imageData)
 
     createElement(
       'p',
@@ -72,20 +72,19 @@ function displayResults(images, metaInformation) {
       'No new alt text available'
     )
 
-    createElement('p', null, 'Context: ', imageData)
+    createElement('p', null, 'Neuer Alt Text(Kontext): ', imageData)
+    createElement(
+      'p',
+      null,
+      image.alt_new_context,
+      imageData,
+      'No context available'
+    )
 
-    createElement('p', null, image.context, imageData, 'No context available')
-
-    // createElement('p', null, 'Area: ', imageData)
-
-    // createElement('p', null, image.area, imageData, 'No area available')
-
-    // createElement('p', null, 'Is Logo: ', imageData)
-
-    // createElement('p', null, image.isLogo, imageData, 'Is not a logo')
-
-    // createElement('p', null, 'Is Icon: ', imageData)
-    // createElement('p', null, image.isIcon, imageData, 'Is not an icon')
+    if (image.context) {
+      createElement('p', null, 'Context: ', imageData)
+      createElement('p', null, image.context, imageData, 'No context available')
+    }
 
     container.appendChild(div)
   })

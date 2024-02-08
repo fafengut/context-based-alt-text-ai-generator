@@ -162,13 +162,13 @@ function checkIfHtmlString(textContent) {
 function getMetaInformation() {
   const title = document.querySelector('title').textContent
     ? document.querySelector('title').textContent
-    : 'No title available'
+    : false
   const description = document.querySelector('meta[name="description"]')
     ? document.querySelector('meta[name="description"]').getAttribute('content')
-    : 'No description available'
+    : false
   const keywords = document.querySelector('meta[name="keywords"]')
     ? document.querySelector('meta[name="keywords"]').getAttribute('content')
-    : 'No keywords available'
+    : false
 
   return {
     title: title,
