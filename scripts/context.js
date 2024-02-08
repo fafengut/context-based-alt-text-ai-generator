@@ -4,15 +4,20 @@ function findTextParent(element) {
   let siblingText = ''
   let level = 0
 
-  while (parent && parent.tagName !== 'BODY' && level < 5) {
-    siblingText = checkSibling(parent)
+  while (parent && parent.tagName.toUpperCase() !== 'BODY' && level < 5) {
+    if (
+      parent.tagName.toUpperCase() !== 'STYLE' &&
+      parent.tagName.toUpperCase() !== 'SCRIPT'
+    ) {
+      siblingText = checkSibling(parent)
 
-    if (siblingText && siblingText.trim().split(' ').length > minWordCount) {
-      parent.setAttribute('data-checked', 'true')
-      return siblingText
-    }
-    if (parent.parentElement.getAttribute('data-checked') === 'true') {
-      return siblingText
+      if (siblingText && siblingText.trim().split(' ').length > minWordCount) {
+        parent.setAttribute('data-checked', 'true')
+        return siblingText
+      }
+      if (parent.parentElement.getAttribute('data-checked') === 'true') {
+        return siblingText
+      }
     }
     parent = parent.parentElement
     level++
@@ -23,6 +28,22 @@ function findTextParent(element) {
 function checkSibling(element) {
   let prevSibling = element.previousElementSibling
   let nextSibling = element.nextElementSibling
+
+  while (
+    prevSibling &&
+    (prevSibling.tagName.toUpperCase() === 'SCRIPT' ||
+      prevSibling.tagName.toUpperCase() === 'STYLE')
+  ) {
+    prevSibling = prevSibling.previousElementSibling
+  }
+
+  while (
+    nextSibling &&
+    (nextSibling.tagName.toUpperCase() === 'SCRIPT' ||
+      nextSibling.tagName.toUpperCase() === 'STYLE')
+  ) {
+    nextSibling = nextSibling.nextElementSibling
+  }
 
   const prevSiblingText = checkSiblingText(prevSibling, 'prev')
   const nextSiblingText = checkSiblingText(nextSibling, 'next')
@@ -72,6 +93,16 @@ function checkSiblingText(element, direction) {
 function checkChildText(element, processedTexts) {
   if (element.getAttribute('data-checked') === 'true') {
     // If the element has data-checked attribute set to true, return an empty string
+    return ''
+  }
+
+  // If the element is a script or style element, return an empty string
+  if (
+    element.tagName.toUpperCase() === 'SCRIPT' ||
+    element.tagName.toUpperCase() === 'STYLE' ||
+    element.tagName.toUpperCase() === 'FORM'
+  ) {
+    element.setAttribute('data-checked', 'true') // Mark the element as checked
     return ''
   }
 
@@ -131,13 +162,13 @@ function checkIfHtmlString(textContent) {
 function getMetaInformation() {
   const title = document.querySelector('title').textContent
     ? document.querySelector('title').textContent
-    : 'No title available'
+    : false
   const description = document.querySelector('meta[name="description"]')
     ? document.querySelector('meta[name="description"]').getAttribute('content')
-    : 'No description available'
+    : false
   const keywords = document.querySelector('meta[name="keywords"]')
     ? document.querySelector('meta[name="keywords"]').getAttribute('content')
-    : 'No keywords available'
+    : false
 
   return {
     title: title,

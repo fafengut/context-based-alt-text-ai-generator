@@ -27,9 +27,11 @@ h1 {
 
 .container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 4px;
   font-size: 1.4rem;
+  max-width: 1500px;
+  margin-inline: auto;
 }
 
 .image-container,

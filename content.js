@@ -72,7 +72,7 @@ async function checkImage(image) {
       let possibleText = ''
       let metaInformation = {}
       if (isLogo || isIcon) {
-        possibleText = 'Not needed for logos or icons'
+        possibleText = false
       } else {
         possibleText = findTextParent(image)
       }
@@ -81,7 +81,7 @@ async function checkImage(image) {
         return {
           src: absoluteSrc,
           alt: alt,
-          possibleText: possibleText ? possibleText : 'no Text',
+          possibleText: possibleText ? possibleText : null,
           area: area,
           isLogo: isLogo,
           isIcon: isIcon,

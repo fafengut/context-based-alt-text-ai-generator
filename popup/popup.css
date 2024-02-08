@@ -67,3 +67,11 @@ a {
   text-decoration: none;
   color: #2196f3;
 }
+
+#status-text.success {
+  border: 3px solid #4caf50;
+}
+
+#status-text.error {
+  border: 3px solid #f44336;
+}
