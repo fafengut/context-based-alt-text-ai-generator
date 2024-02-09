@@ -1,6 +1,4 @@
 chrome.commands.onCommand.addListener((command) => {
-  console.log(`Command: "${command}" triggered`)
-
   if (command.name === 'generate-alt') {
     // Bilder und Kontext vom Contontscript abfragen
     chrome.runtime.sendMessage('get-images-and-context', (response) => {})
@@ -10,9 +8,6 @@ chrome.commands.onCommand.addListener((command) => {
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.message === 'process_images') {
     const apiKey = await getApiKey()
-
-    console.log('apiKey: ' + apiKey)
-
     const imagesData = request.imagesData
     const metaInformation = request.metaInformation
     generateAltTexts(imagesData, metaInformation, apiKey).then((images) => {
@@ -138,9 +133,7 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
       }
     }
     const result = await response.json()
-    console.log('result', result)
     let altText = result.choices[0].message.content
-    console.log('altText', altText)
     if (altText.startsWith('Alternativtext:')) {
       altText = altText.substring('Alternativtext:'.length).trim()
     }
@@ -159,5 +152,7 @@ function getApiKey() {
         resolve(result.apiKey)
       }
     })
+  }).catch((error) => {
+    console.error(error)
   })
 }

@@ -87,8 +87,6 @@ async function checkImage(image) {
           isIcon: isIcon,
           metaInformation: metaInformation,
         }
-      } else {
-        console.log('Image not reachable:', absoluteSrc)
       }
     } catch (error) {
       // Handle the error here
