@@ -21,7 +21,6 @@ p {
   background-color: black;
   color: white;
   padding: 15px 15px 12px 15px;
-  border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -45,10 +44,14 @@ p {
   padding: 10px;
   border-radius: 5px;
   border: none;
-  background-color: #2196f3;
+  background-color: #085696;
   color: white;
   cursor: pointer;
   margin-block: 0.5rem;
+
+  &:hover {
+    background-color: #0b78d0;
+  }
 }
 
 #save-btn {
@@ -65,7 +68,12 @@ p {
 
 a {
   text-decoration: none;
-  color: #2196f3;
+  color: #0b78d0;
+
+  &:hover {
+    text-decoration: underline;
+    color: #2f9bf4;
+  }
 }
 
 #status-text.success {
@@ -74,4 +82,11 @@ a {
 
 #status-text.error {
   border: 3px solid #f44336;
+}
+
+.authormode-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
 }

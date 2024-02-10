@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (command.name === 'generate-alt') {
         document.getElementById('current-shortcut').textContent =
           command.shortcut
+      } else if (command.name === 'authormode') {
+        document.getElementById('authormode-shortcut').textContent =
+          command.shortcut
       }
     })
   })

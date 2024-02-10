@@ -46,6 +46,13 @@
         "mac": "Command+Shift+A"
       },
       "description": "Generiere Alternativtexte für alle Bilder"
+    },
+    "authormode": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Starte den Autorenmodus"
     }
   },
   "web_accessible_resources": [
