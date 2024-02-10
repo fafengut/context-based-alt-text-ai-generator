@@ -1,6 +1,5 @@
 chrome.commands.onCommand.addListener((command) => {
   if (command.name === 'generate-alt') {
-    // Bilder und Kontext vom Contontscript abfragen
     chrome.runtime.sendMessage('get-images-and-context', (response) => {})
   }
 })
@@ -30,13 +29,12 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
       return {
         src: imageData.src,
         alt_old: imageData.alt,
-        alt_new:
-          imageData.isLogo || imageData.isIcon
-            ? 'Wird für Logos und Icons nicht generiert.'
-            : await getAlternativeTexts(imageData, apiKey, null, null),
+        alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
         alt_new_context:
-          imageData.isLogo || imageData.isIcon
-            ? 'Wird für Logos und Icons nicht generiert.'
+          imageData.area === 'header' ||
+          imageData.area === 'footer' ||
+          imageData.area === 'nav'
+            ? 'Kein Kontext notwendig für Bilder im Header, Navigation oder Footer.'
             : await getAlternativeTexts(
                 imageData,
                 apiKey,
@@ -47,10 +45,20 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
       }
     })
   )
-  return finishedImages // Array von Objekten der vorherigen Bilderdaten mit den neuen Alternativtexten
+  return finishedImages
 }
 
 async function getAlternativeTexts(image, apiKey, context, metaInformation) {
+  if (image.isLogo || image.isIcon) {
+    return 'Wird für Logos und Icons nicht generiert.'
+  } else if (
+    image.area === 'header' ||
+    image.area === 'footer' ||
+    image.area === 'nav'
+  ) {
+    context = null
+    metaInformation = null
+  }
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -79,7 +87,7 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
                       : ''
                   } ` +
                   ` ${
-                    image && image.alt
+                    image && image.alt && image.area
                       ? `Beziehe den bestehenden Alternativtext des Bildes mit ein: ${image.alt}.`
                       : ''
                   }` +
@@ -137,7 +145,6 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
   }
 }
 
-// API Key aus dem Storage abrufen
 function getApiKey() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['apiKey'], function (result) {

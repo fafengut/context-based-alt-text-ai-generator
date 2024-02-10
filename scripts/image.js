@@ -113,7 +113,7 @@ function checkImageDetails(element) {
       isIcon = true
     }
 
-    if (area && isLogo && isIcon) {
+    if (area && (isLogo || isIcon)) {
       break
     }
 
