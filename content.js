@@ -4,6 +4,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const imagesData = []
     const images = document.getElementsByTagName('img')
     const metaInformation = getMetaInformation()
+
     for (const image of images) {
       const imageDetails = await checkImage(image)
       if (imageDetails) {
@@ -17,6 +18,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         })
       }
     }
+
     chrome.runtime.sendMessage({
       message: 'process_images',
       imagesData,
@@ -26,11 +28,30 @@ chrome.runtime.onMessage.addListener(async (request) => {
 })
 
 function scrollToBottom() {
+  // Add blur and message
+  const blurOverlay = document.createElement('div')
+  blurOverlay.style.position = 'fixed'
+  blurOverlay.style.top = '0'
+  blurOverlay.style.left = '0'
+  blurOverlay.style.width = '100%'
+  blurOverlay.style.height = '100%'
+  blurOverlay.style.background = 'rgba(0,0,0,0.5)'
+  blurOverlay.style.backdropFilter = 'blur(5px)'
+  blurOverlay.style.zIndex = '9999'
+  blurOverlay.style.display = 'flex'
+  blurOverlay.style.justifyContent = 'center'
+  blurOverlay.style.alignItems = 'center'
+  blurOverlay.style.color = '#fff'
+  blurOverlay.style.fontSize = '24px'
+  blurOverlay.innerText = 'Analysiere Webseite...'
+  document.body.appendChild(blurOverlay)
+
   return new Promise((resolve) => {
     const distance = 100
     const delay = 50
 
     let totalHeight = 0
+    let originalScrollY = window.scrollY
     let timer = setInterval(() => {
       const scrollHeight = document.body.scrollHeight
       window.scrollBy(0, distance)
@@ -38,6 +59,9 @@ function scrollToBottom() {
 
       if (totalHeight >= scrollHeight) {
         clearInterval(timer)
+        // Remove blur and message
+        window.scrollTo(0, originalScrollY) // Scroll back to the original point
+        blurOverlay.remove()
         resolve() // Resolve the promise after scrolling has finished
       }
     }, delay)
