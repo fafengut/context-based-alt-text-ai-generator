@@ -10,23 +10,16 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const apiKey = await getApiKey()
     const imagesData = request.imagesData
     const metaInformation = request.metaInformation
-    generateAltTexts(imagesData, metaInformation, apiKey).then((images) => {
-      // Öffne einen neuen Tab und zeige die Ergebnisse an
-      chrome.tabs.create(
-        { url: 'author-page/author-page.html' },
-        function (tab) {
-          // Senden der Ergebnisse an den neuen Tab
-          const resultsTabId = tab.id
-          setTimeout(() => {
-            // Gib dem Tab etwas Zeit, um zu laden
-            chrome.tabs.sendMessage(resultsTabId, {
-              message: 'display_results',
-              images: images,
-              metaInformation: metaInformation,
-            })
-          }, 1000)
-        }
-      )
+
+    chrome.tabs.create({ url: 'author-page/author-page.html' }, function (tab) {
+      const resultsTabId = tab.id
+      generateAltTexts(imagesData, metaInformation, apiKey).then((images) => {
+        chrome.tabs.sendMessage(resultsTabId, {
+          message: 'display_results',
+          images: images,
+          metaInformation: metaInformation,
+        })
+      })
     })
   }
 })
