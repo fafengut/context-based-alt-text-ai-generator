@@ -75,13 +75,7 @@ function checkImageDetails(element) {
     element.naturalHeight <= 50 &&
     element.naturalHeight > 1
 
-  let counter = 0
-  const maxDepth = 2
-
-  while (
-    currentElement &&
-    (currentElement.tagName !== 'BODY' || counter < maxDepth)
-  ) {
+  while (currentElement && currentElement.tagName !== 'BODY') {
     const tagName = currentElement.tagName.toLowerCase()
     const id = currentElement.id.toLowerCase()
     const classList = currentElement.classList
@@ -124,7 +118,6 @@ function checkImageDetails(element) {
     }
 
     currentElement = currentElement.parentElement
-    counter++
   }
 
   return { area, isLogo, isIcon }
