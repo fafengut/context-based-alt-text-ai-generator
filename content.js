@@ -1,31 +1,65 @@
 chrome.runtime.onMessage.addListener(async (request) => {
-  if (request.message === 'collect_images_and_context') {
-    await scrollToBottom()
-    const imagesData = []
-    const images = document.getElementsByTagName('img')
+  if (request.message === 'author-mode-triggered') {
     const metaInformation = getMetaInformation()
-
-    for (const image of images) {
-      const imageDetails = await checkImage(image)
-      if (imageDetails) {
-        imagesData.push({
-          src: imageDetails.src,
-          alt: imageDetails.alt,
-          context: imageDetails.possibleText,
-          area: imageDetails.area,
-          isLogo: imageDetails.isLogo,
-          isIcon: imageDetails.isIcon,
-        })
-      }
-    }
+    const imagesData = await getImagesData()
 
     chrome.runtime.sendMessage({
-      message: 'process_images',
+      message: 'create-author-tab',
       imagesData,
       metaInformation,
     })
+  } else if (request.message === 'normal-mode-triggered') {
+    const metaInformation = getMetaInformation()
+    const imagesData = await getImagesData()
+
+    chrome.runtime.sendMessage(
+      {
+        message: 'create-alt-texts',
+        imagesData,
+        metaInformation,
+      },
+      (response) => {
+        console.log(response)
+        response.forEach((image) => {
+          const imageElement = document.querySelector(
+            `[data-image="${image.identifier}"]`
+          )
+          if (imageElement) {
+            imageElement.setAttribute(
+              'alt',
+              image.alt_new_context ? image.alt_new_context : image.alt_new
+            )
+          }
+        })
+      }
+    )
   }
 })
+
+async function getImagesData() {
+  await scrollToBottom()
+  const imagesData = []
+  const images = document.getElementsByTagName('img')
+  let identifier = 0
+  for (const image of images) {
+    const imageDetails = await checkImage(image)
+    image.setAttribute('data-image', identifier)
+    if (imageDetails) {
+      imagesData.push({
+        src: imageDetails.src,
+        alt: imageDetails.alt,
+        context: imageDetails.possibleText,
+        area: imageDetails.area,
+        isLogo: imageDetails.isLogo,
+        isIcon: imageDetails.isIcon,
+        identifier: identifier,
+      })
+    }
+    identifier++
+  }
+
+  return imagesData
+}
 
 function scrollToBottom() {
   // Add blur and message

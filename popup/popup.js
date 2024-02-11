@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
   authorModeBtn.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, {
-        message: 'collect_images_and_context',
+        message: 'author-mode-triggered',
       })
     })
   })
