@@ -54,11 +54,5 @@
       },
       "description": "Starte den Autorenmodus"
     }
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["scripts/*"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
