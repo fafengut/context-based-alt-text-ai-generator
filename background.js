@@ -64,9 +64,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
         alt_old: imageData.alt,
         alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
         alt_new_context:
-          imageData.area === 'header' ||
-          imageData.area === 'footer' ||
-          imageData.area === 'nav'
+          imageData.area === 'footer' || imageData.area === 'nav'
             ? false
             : await getAlternativeTexts(
                 imageData,
@@ -85,11 +83,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
 async function getAlternativeTexts(image, apiKey, context, metaInformation) {
   if (image.isLogo || image.isIcon) {
     return 'Wird für Logos und Icons nicht generiert.'
-  } else if (
-    image.area === 'header' ||
-    image.area === 'footer' ||
-    image.area === 'nav'
-  ) {
+  } else if (image.area === 'footer' || image.area === 'nav') {
     context = null
     metaInformation = null
   }

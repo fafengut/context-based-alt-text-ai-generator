@@ -78,7 +78,7 @@ function displayResults(images, metaInformation) {
       null,
       image.alt_new_context,
       imageData,
-      'Kein Kontext notwendig für Bilder im Header, Navigation oder Footer.'
+      'Kein Kontext notwendig für Bilder in Navigation oder Footer.'
     )
 
     if (image.context) {
