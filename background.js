@@ -1,25 +1,58 @@
 chrome.commands.onCommand.addListener((command) => {
-  if (command.name === 'generate-alt') {
-    chrome.runtime.sendMessage('get-images-and-context', (response) => {})
+  if (command === 'generate-alt') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        message: 'normal-mode-triggered',
+      })
+    })
+  } else if (command === 'authormode') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        message: 'author-mode-triggered',
+      })
+    })
   }
 })
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.message === 'process_images') {
-    const apiKey = await getApiKey()
-    const imagesData = request.imagesData
-    const metaInformation = request.metaInformation
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === 'create-author-tab') {
+    getApiKey().then((apiKey) => {
+      const imagesData = request.imagesData
+      const metaInformation = request.metaInformation
 
-    chrome.tabs.create({ url: 'author-page/author-page.html' }, function (tab) {
-      const resultsTabId = tab.id
-      generateAltTexts(imagesData, metaInformation, apiKey).then((images) => {
-        chrome.tabs.sendMessage(resultsTabId, {
-          message: 'display_results',
-          images: images,
-          metaInformation: metaInformation,
-        })
-      })
+      chrome.tabs.create(
+        { url: 'author-page/author-page.html' },
+        function (tab) {
+          const resultsTabId = tab.id
+          generateAltTexts(imagesData, metaInformation, apiKey).then(
+            (images) => {
+              chrome.tabs.sendMessage(resultsTabId, {
+                message: 'display_results',
+                images: images,
+                metaInformation: metaInformation,
+              })
+            }
+          )
+        }
+      )
     })
+  } else if (request.message === 'create-alt-texts') {
+    getApiKey()
+      .then((apiKey) => {
+        const imagesData = request.imagesData
+        const metaInformation = request.metaInformation
+        generateAltTexts(imagesData, metaInformation, apiKey)
+          .then((images) => {
+            sendResponse(images)
+          })
+          .catch((error) => {
+            console.error('Error in generateAltTexts:', error)
+          })
+      })
+      .catch((error) => {
+        console.error('Error in getApiKey:', error)
+      })
+    return true // keeps the message channel open to the sender until sendResponse is called
   }
 })
 
@@ -31,10 +64,8 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
         alt_old: imageData.alt,
         alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
         alt_new_context:
-          imageData.area === 'header' ||
-          imageData.area === 'footer' ||
-          imageData.area === 'nav'
-            ? 'Kein Kontext notwendig für Bilder im Header, Navigation oder Footer.'
+          imageData.area === 'footer' || imageData.area === 'nav'
+            ? false
             : await getAlternativeTexts(
                 imageData,
                 apiKey,
@@ -42,6 +73,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
                 metaInformation
               ),
         context: imageData.context,
+        identifier: imageData.identifier,
       }
     })
   )
@@ -51,11 +83,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
 async function getAlternativeTexts(image, apiKey, context, metaInformation) {
   if (image.isLogo || image.isIcon) {
     return 'Wird für Logos und Icons nicht generiert.'
-  } else if (
-    image.area === 'header' ||
-    image.area === 'footer' ||
-    image.area === 'nav'
-  ) {
+  } else if (image.area === 'footer' || image.area === 'nav') {
     context = null
     metaInformation = null
   }

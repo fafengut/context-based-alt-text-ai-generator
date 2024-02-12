@@ -80,13 +80,7 @@ function checkImageDetails(element) {
     const id = currentElement.id.toLowerCase()
     const classList = currentElement.classList
 
-    if (
-      !area &&
-      (tagName === 'header' ||
-        tagName === 'main' ||
-        tagName === 'footer' ||
-        tagName === 'nav')
-    ) {
+    if (!area && (tagName === 'footer' || tagName === 'nav')) {
       area = tagName
     }
 

@@ -78,7 +78,7 @@ function displayResults(images, metaInformation) {
       null,
       image.alt_new_context,
       imageData,
-      'No context available'
+      'Kein Kontext notwendig für Bilder in Navigation oder Footer.'
     )
 
     if (image.context) {
@@ -95,8 +95,6 @@ function createElement(type, attributes, text, parent, fallbackText) {
   for (const key in attributes) {
     element.setAttribute(key, attributes[key])
   }
-  if (text) {
-    element.innerText = text ? text : fallbackText
-  }
+  element.innerText = text ? text : fallbackText
   parent.appendChild(element)
 }
