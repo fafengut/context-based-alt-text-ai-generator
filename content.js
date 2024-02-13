@@ -138,7 +138,7 @@ async function checkImage(image) {
       if (reachable) {
         return {
           src: absoluteSrc,
-          alt: alt,
+          alt: alt ? alt : null,
           possibleText: possibleText ? possibleText : null,
           area: area,
           isLogo: isLogo,
