@@ -65,7 +65,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
         alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
         alt_new_context:
           imageData.area === 'footer' || imageData.area === 'nav'
-            ? false
+            ? null
             : await getAlternativeTexts(
                 imageData,
                 apiKey,
@@ -155,9 +155,13 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
         throw new Error('API Key Limit erreicht')
       } else if (response.status === 401) {
         throw new Error('API Key ungültig')
+      } else if (response.status === 429) {
+        throw new Error('API Rate Limit erreicht')
       } else {
         throw new Error(
-          `Fehler bei der Anfrage an die OpenAI-API: ${response.status}`
+          console.error(
+            `Fehler bei der Anfrage an die OpenAI-API: ${response.status} - ${response.statusText}`
+          )
         )
       }
     }
