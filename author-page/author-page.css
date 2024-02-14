@@ -2,6 +2,16 @@ body {
   background-color: lightgray;
 }
 
+#limits {
+  display: none;
+  justify-content: space-around;
+
+  div {
+    display: flex;
+    gap: 1rem;
+  }
+}
+
 h1 {
   text-align: center;
   font-size: 4rem;

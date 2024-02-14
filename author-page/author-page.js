@@ -2,6 +2,13 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.message === 'display_results') {
     document.getElementById('loading').style.display = 'none'
     displayResults(request.images, request.metaInformation)
+  } else if (request.message === 'update-limits') {
+    const limits = document.getElementById('limits')
+    const children = limits.children
+    for (i = 0; i < children.length; i++) {
+      children[i].querySelector('div').innerText = request.limits[i]
+    }
+    limits.style.display = 'flex'
   }
 })
 
@@ -62,21 +69,23 @@ function displayResults(images, metaInformation) {
     }
     imageData.appendChild(altText)
 
-    createElement('p', null, 'Neuer Alt Text: ', imageData)
+    if (image.alt_new) {
+      createElement('p', null, 'Neuer Alt Text: ', imageData)
 
-    createElement(
-      'p',
-      null,
-      image.alt_new,
-      imageData,
-      'No new alt text available'
-    )
+      createElement(
+        'p',
+        null,
+        image.alt_new.altText,
+        imageData,
+        'No new alt text available'
+      )
+    }
 
     createElement('p', null, 'Neuer Alt Text(Kontext): ', imageData)
     createElement(
       'p',
       null,
-      image.alt_new_context,
+      image.alt_new_context.altText,
       imageData,
       'Kein Kontext notwendig für Bilder in Navigation oder Footer.'
     )
