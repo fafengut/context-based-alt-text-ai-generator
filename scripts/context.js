@@ -100,7 +100,8 @@ function checkChildText(element, processedTexts) {
   if (
     element.tagName.toUpperCase() === 'SCRIPT' ||
     element.tagName.toUpperCase() === 'STYLE' ||
-    element.tagName.toUpperCase() === 'FORM'
+    element.tagName.toUpperCase() === 'FORM' ||
+    element.tagName.toUpperCase() === 'TIME'
   ) {
     element.setAttribute('data-checked', 'true') // Mark the element as checked
     return ''
@@ -130,10 +131,9 @@ function checkChildText(element, processedTexts) {
     return childText
   }
 
-  const elementText = element.textContent.trim()
+  const elementText = sliceSourceText(element.textContent.trim())
   if (
     elementText.split(' ').length > 2 &&
-    !checkIfSourceText(elementText) &&
     !checkIfHtmlString(elementText) &&
     !processedTexts.has(elementText) // Check if the text has already been processed
   ) {
@@ -147,9 +147,20 @@ function checkChildText(element, processedTexts) {
   return childText
 }
 
-function checkIfSourceText(textContent) {
+// function checkIfSourceText(textContent) {
+//   const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
+//   return sourceKeywords.some((keyword) => textContent.includes(keyword))
+// }
+
+function sliceSourceText(textContent) {
   const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
-  return sourceKeywords.some((keyword) => textContent.includes(keyword))
+  return sourceKeywords.reduce((acc, keyword) => {
+    if (textContent.includes(keyword)) {
+      const index = textContent.indexOf(keyword)
+      return textContent.slice(0, index)
+    }
+    return acc
+  })
 }
 
 // Check if the text contains HTML tags
