@@ -103,7 +103,7 @@ function scrollToBottom() {
 }
 
 async function checkImage(image) {
-  let src = image.getAttribute('src')
+  const src = image.src
   const alt = image.getAttribute('alt')
   let isDecodedImage = src && src.startsWith('data:image/')
 
@@ -117,13 +117,8 @@ async function checkImage(image) {
   const isAdvertisement = checkIfAdvertisement(image)
 
   if (!isDecodedImage && !isPixel && !isAdvertisement) {
-    const absoluteSrc =
-      src && src.startsWith('http')
-        ? src
-        : new URL(src, window.location.href).href
-
     try {
-      const reachable = await isImageReachable(absoluteSrc)
+      const reachable = await isImageReachable(src)
 
       const { area, isLogo, isIcon } = checkImageDetails(image)
 
@@ -137,7 +132,7 @@ async function checkImage(image) {
 
       if (reachable) {
         return {
-          src: absoluteSrc,
+          src: src,
           alt: alt ? alt : null,
           possibleText: possibleText ? possibleText : null,
           area: area,
