@@ -62,7 +62,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
       return {
         src: imageData.src,
         alt_old: imageData.alt,
-        alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
+        // alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
         alt_new_context:
           imageData.area === 'footer' || imageData.area === 'nav'
             ? null
@@ -76,7 +76,24 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
         identifier: imageData.identifier,
       }
     })
-  )
+  ).then((images) => {
+    const requests = images
+      .filter((image) => typeof image.alt_new_context === 'object')
+      .map((image) => image.alt_new_context)
+    const limitRequests = requests[0].limitRequests
+    const limitTokens = requests[0].limitTokens
+    const remainingRequests = Math.min(
+      ...requests.map((image) => image.remainingRequests)
+    )
+    const remainingTokens = Math.min(
+      ...requests.map((image) => image.remainingTokens)
+    )
+    chrome.runtime.sendMessage({
+      message: 'update-limits',
+      limits: [limitRequests, limitTokens, remainingRequests, remainingTokens],
+    })
+    return images
+  })
   return finishedImages
 }
 
@@ -115,7 +132,7 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
                       : ''
                   } ` +
                   ` ${
-                    image && image.alt && image.area
+                    image && image.alt
                       ? `Beziehe den bestehenden Alternativtext des Bildes mit ein: ${image.alt}.`
                       : ''
                   }` +
@@ -149,29 +166,31 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
         max_tokens: 100,
       }),
     })
-
-    if (!response.ok) {
-      if (response.status === 402) {
-        throw new Error('API Key Limit erreicht')
-      } else if (response.status === 401) {
-        throw new Error('API Key ungültig')
-      } else if (response.status === 429) {
-        throw new Error('API Rate Limit erreicht')
-      } else {
-        throw new Error(
-          console.error(
-            `Fehler bei der Anfrage an die OpenAI-API: ${response.status} - ${response.statusText}`
-          )
-        )
-      }
-    }
+    const limitRequests = response.headers.get('x-ratelimit-limit-requests')
+    const limitTokens = response.headers.get('x-ratelimit-limit-tokens')
+    const remainingRequests = response.headers.get(
+      'x-ratelimit-remaining-requests'
+    )
+    const remainingTokens = response.headers.get('x-ratelimit-remaining-tokens')
     const result = await response.json()
+    if (result.error) {
+      throw new Error(
+        `Fehler bei der Anfrage an die OpenAI-API: ${result.error.message}`
+      )
+      // return `Fehler bei der Anfrage an die OpenAI-API: ${result.error.message}`
+    }
     let altText = result.choices[0].message.content
     if (altText.startsWith('Alternativtext:')) {
       altText = altText.substring('Alternativtext:'.length).trim()
     }
 
-    return altText
+    return {
+      altText,
+      limitRequests: parseInt(limitRequests),
+      limitTokens: parseInt(limitTokens),
+      remainingRequests: parseInt(remainingRequests),
+      remainingTokens: parseInt(remainingTokens),
+    }
   } catch (error) {
     console.error(error)
   }
