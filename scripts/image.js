@@ -85,6 +85,19 @@ function checkImageDetails(element) {
     }
 
     if (
+      !area &&
+      (id.includes('comment') ||
+        id.includes('kommentar') ||
+        Array.from(classList).some(
+          (cls) =>
+            cls.toLowerCase().includes('comment') ||
+            cls.toLowerCase().includes('kommentar')
+        ))
+    ) {
+      area = 'comments'
+    }
+
+    if (
       !isLogo &&
       (id.includes('logo') ||
         Array.from(classList).some((cls) =>
