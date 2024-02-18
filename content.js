@@ -19,16 +19,12 @@ chrome.runtime.onMessage.addListener(async (request) => {
         metaInformation,
       },
       (response) => {
-        console.log(response)
         response.forEach((image) => {
           const imageElement = document.querySelector(
             `[data-image="${image.identifier}"]`
           )
-          if (imageElement) {
-            imageElement.setAttribute(
-              'alt',
-              image.alt_new_context ? image.alt_new_context : image.alt_new
-            )
+          if (imageElement && image.alt_new_context.altText !== null) {
+            imageElement.setAttribute('alt', image.alt_new_context.altText)
           }
         })
       }
