@@ -85,9 +85,9 @@ function displayResults(images, metaInformation) {
     createElement(
       'p',
       null,
-      image.alt_new_context.altText,
+      image.alt_new_context.altText ? image.alt_new_context.altText : null,
       imageData,
-      'Kein Kontext notwendig für Bilder in Navigation oder Footer.'
+      image.alt_new_context.reason
     )
 
     if (image.context) {
