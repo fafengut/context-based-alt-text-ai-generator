@@ -161,14 +161,31 @@ function checkChildText(element, processedTexts) {
 }
 
 function sliceSourceText(textContent) {
-  const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
-  return sourceKeywords.reduce((acc, keyword) => {
+  const sourceKeywords = [
+    'Foto:',
+    'Bild:',
+    'Quelle:',
+    'Credits:',
+    '\u00A9',
+    'Stand:',
+    'Datum:',
+    'Erstellt:',
+    'Zuletzt aktualisiert:',
+    'Zuletzt bearbeitet:',
+    'Bearbeitet:',
+    'Autor:',
+    'Autorin:',
+  ]
+  let result = textContent
+  for (let i = 0; i < sourceKeywords.length; i++) {
+    const keyword = sourceKeywords[i]
     if (textContent.includes(keyword)) {
       const index = textContent.indexOf(keyword)
-      return textContent.slice(0, index)
+      result = textContent.slice(0, index)
+      break
     }
-    return acc
-  })
+  }
+  return result
 }
 
 // Check if the text contains HTML tags
