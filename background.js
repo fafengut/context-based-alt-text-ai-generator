@@ -78,6 +78,7 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
                 metaInformation
               ),
         context: imageData.context,
+        isFunctional: imageData.isFunctional,
         identifier: imageData.identifier,
       }
     })
@@ -104,7 +105,6 @@ async function generateAltTexts(imagesData, metaInformation, apiKey) {
       message: 'update-limits',
       limits: [limitRequests, limitTokens, remainingRequests, remainingTokens],
     })
-    console.log('images', images)
     return images
   })
   return finishedImages
@@ -210,7 +210,6 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
     if (altText.startsWith('Alternativtext:')) {
       altText = altText.substring('Alternativtext:'.length).trim()
     }
-    console.log(limitRequests, limitTokens, remainingRequests, remainingTokens)
 
     return {
       altText,

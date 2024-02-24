@@ -40,7 +40,14 @@ async function getImagesData() {
   for (const image of images) {
     const imageDetails = await checkImage(image)
     image.setAttribute('data-image', identifier)
-    if (imageDetails) {
+    if (
+      imageDetails &&
+      imageDetails.isLogo === false &&
+      imageDetails.isIcon === false &&
+      imageDetails.area !== 'footer' &&
+      imageDetails.area !== 'nav' &&
+      imageDetails.area !== 'comments'
+    ) {
       imagesData.push({
         src: imageDetails.src,
         alt: imageDetails.alt,
