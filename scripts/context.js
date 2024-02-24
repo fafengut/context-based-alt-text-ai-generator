@@ -151,7 +151,6 @@ function checkChildText(element, processedTexts) {
     !checkIfHtmlString(elementText) &&
     !processedTexts.has(elementText) // Check if the text has already been processed
   ) {
-    // element.style.border = '3px solid blue'
     childText += elementText + '\n'
     processedTexts.add(elementText) // Add the text to the set of processed texts
   }
@@ -160,11 +159,6 @@ function checkChildText(element, processedTexts) {
 
   return childText
 }
-
-// function checkIfSourceText(textContent) {
-//   const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
-//   return sourceKeywords.some((keyword) => textContent.includes(keyword))
-// }
 
 function sliceSourceText(textContent) {
   const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']

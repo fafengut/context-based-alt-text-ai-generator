@@ -125,18 +125,6 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
     metaInformation = null
   }
   try {
-    const examples =
-      '1. Ein Datendiagramm: Ein Balkendiagramm vergleicht, wie viele Widgets im Juni, Juli und August verkauft wurden. Auf dem Kurzetikett steht: Abbildung eins – Verkäufe im Juni, Juli und August. Die längere Beschreibung identifiziert den Diagrammtyp und bietet eine allgemeine Zusammenfassung der Daten, Trends und Auswirkungen, die mit den im Diagramm verfügbaren Daten vergleichbar sind. Wo möglich und sinnvoll, werden die tatsächlichen Daten in einer Tabelle bereitgestellt.' +
-      '2. Eine Audioaufnahme einer Rede: Der Link zu einem Audioclip lautet: Rede des Vorsitzenden vor der Versammlung. Direkt nach dem Link zum Audioclip wird ein Link zu einem Texttranskript bereitgestellt.' +
-      '3. Eine Animation, die veranschaulicht, wie ein Automotor funktioniert: Eine Animation zeigt, wie ein Automotor funktioniert. Es gibt keinen Ton und die Animation ist Teil eines Tutorials, das beschreibt, wie eine Engine funktioniert. Da der Text des Tutorials bereits eine vollständige Erklärung enthält, ist das Bild eine Alternative für Text und die Textalternative enthält nur eine kurze Beschreibung der Animation und verweist für weitere Informationen auf den Tutorial-Text.' +
-      '4. Eine Verkehrs-Webcam: Auf einer Website können Benutzer aus einer Vielzahl von Webcams auswählen, die in einer Großstadt verteilt sind. Nachdem eine Kamera ausgewählt wurde, wird das Bild alle zwei Minuten aktualisiert. Eine kurze Textalternative identifiziert die Webcam als Verkehrs-Webkamera. Die Website bietet außerdem eine Tabelle mit den Fahrzeiten für jede der von den Webcams erfassten Routen. Die Tabelle wird außerdem alle zwei Minuten aktualisiert.' +
-      '5. Ein Foto eines historischen Ereignisses in einer Nachrichtenmeldung: Ein Foto von zwei führenden Politikern der Welt, die sich die Hände schütteln, begleitet eine Nachrichtenmeldung über ein internationales Gipfeltreffen. Die Textalternative besagt: Präsident X von Land X schüttelt Premierminister Y von Land Y die Hand.' +
-      '6. Ein Foto eines historischen Ereignisses in Inhalten über diplomatische Beziehungen: Das gleiche Bild wird in einem anderen Kontext verwendet, um Nuancen bei diplomatischen Begegnungen zu erklären. Das Bild des Präsidenten, der dem Premierminister die Hand schüttelt, erscheint auf einer Website, auf der es um komplizierte diplomatische Beziehungen geht. Die erste Textalternative lautet: Präsident X von Land identifiziert die anderen Personen im Raum. Die zusätzliche Beschreibung kann auf derselben Seite wie das Foto oder in einer separaten Datei eingefügt werden, die über einen Link oder einen anderen standardmäßigen Programmmechanismus mit dem Bild verknüpft ist.' +
-      '7. Eine Audioaufzeichnung einer Pressekonferenz: Eine Webseite enthält einen Link zu einer Audioaufzeichnung einer Pressekonferenz. Der Linktext identifiziert die Audioaufnahme. Die Seite verlinkt auch auf ein Texttranskript der Pressekonferenz. Das Transkript enthält eine wörtliche Aufzeichnung aller Aussagen der Redner. Es erkennt, wer spricht, und notiert auch andere wichtige Geräusche, die Teil der Aufnahme sind, wie Applaus, Lachen, Fragen des Publikums usw.' +
-      '8. Eine E-Learning-Anwendung: Eine E-Learning-Anwendung verwendet Soundeffekte, um anzuzeigen, ob die Antworten richtig sind oder nicht. Der Glockenton zeigt an, dass die Antwort richtig ist, und der Piepton zeigt an, dass die Antwort falsch ist. Außerdem ist eine Textbeschreibung enthalten, damit Personen, die den Ton nicht hören oder verstehen können, verstehen, ob die Antwort richtig oder falsch ist.' +
-      '9. Ein verlinktes Miniaturbild: Ein Miniaturbild der Titelseite einer Zeitung verweist auf die Homepage der Smallville Times . Die Textalternative lautet Smallville Times .' +
-      '10. Dasselbe Bild wird auf verschiedenen Websites verwendet: Verschiedene Alternativen für ein Bild der Welt: Ein Bild der Welt, das auf einer Reisewebsite als Link zum Abschnitt „Internationale Reisen“ verwendet wird, hat die Textalternative „ Internationale Reisen“ . Das gleiche Bild wird als Link auf einer Universitätswebsite mit der Textalternative International Campuses verwendet .' +
-      '11. Eine Bildkarte: Ein Bild eines Gebäudegrundrisses ist interaktiv und ermöglicht es dem Benutzer, einen bestimmten Raum auszuwählen und zu einer Seite mit Informationen zu diesem Raum zu navigieren. Die kurze Textalternative beschreibt das Bild und seinen interaktiven Zweck: Gebäudegrundriss. Wählen Sie einen Raum aus, um weitere Informationen zu erhalten.'
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -156,12 +144,17 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
             content:
               'Du weißt, dass Alternativtexte Informationen über den Inhalt eines Bildes liefern. Du berücksichtigst den Kontext, in dem das Bild erscheint, und die Beschreibung der Webseite. Du berücksichtigst auch den bestehenden Alternativtext des Bildes, falls vorhanden. Du antwortest nur mit dem Alternativtext und in der Sprache der Webseite.',
           },
-          // {
-          //   role: 'system',
-          //   content:
-          //     'Die folgenden 11 Beispiele helfen dir zu verstehen, wie Alternativtexte richtig zu generieren sind: ' +
-          //     examples,
-          // },
+          image.isFunctional
+            ? {
+                role: 'system',
+                content:
+                  'Das Bild ist funktional und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zwekc des Bildes), und nicht das Bild beschreiben sollen.',
+              }
+            : {
+                role: 'system',
+                content:
+                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand der Richtlinien der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
+              },
           {
             role: 'user',
             content: [

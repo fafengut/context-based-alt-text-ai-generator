@@ -48,6 +48,7 @@ async function getImagesData() {
         area: imageDetails.area,
         isLogo: imageDetails.isLogo,
         isIcon: imageDetails.isIcon,
+        isFunctional: imageDetails.isFunctional,
         identifier: identifier,
       })
     }
@@ -116,7 +117,7 @@ async function checkImage(image) {
     try {
       const reachable = await isImageReachable(src)
 
-      const { area, isLogo, isIcon } = checkImageDetails(image)
+      const { area, isLogo, isIcon, isFunctional } = checkImageDetails(image)
 
       let possibleText = ''
       let metaInformation = {}
@@ -134,6 +135,7 @@ async function checkImage(image) {
           area: area,
           isLogo: isLogo,
           isIcon: isIcon,
+          isFunctional: isFunctional,
           metaInformation: metaInformation,
         }
       }
