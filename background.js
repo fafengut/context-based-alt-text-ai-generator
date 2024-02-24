@@ -164,17 +164,17 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
                   'Generiere mir einen Alternativtext für dieses Bild.' +
                   ` ${
                     context
-                      ? `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: ${context}. Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Wenn der Kontext das Bild bereits ausreichend beschreibt, dann kann der Alternativtext auch leer sein.`
+                      ? `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Wenn der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung.`
                       : ''
                   } ` +
                   ` ${
                     image && image.alt
-                      ? `Beziehe den bestehenden Alternativtext des Bildes mit ein: ${image.alt}, sofern dieser Sinn ergibt.`
+                      ? `Beziehe den bestehenden Alternativtext des Bildes mit ein: "${image.alt}", sofern dieser Sinn ergibt. Nutze den bestehenden Alternativtext, ohne Bedenken zur Redundanz.`
                       : ''
                   }` +
                   ` ${
                     metaInformation && context
-                      ? `Berücksichtige den Titel (${metaInformation.title}), die Beschreibung (${metaInformation.description}) und Keywords (${metaInformation.keywords}) der Webseite sowie den Kontext des umliegenden Bildes (${context}) bei der Entscheidung, ob das Bild informativ ist und damit einen Alternativtext benötigt oder dekorativ ist und einen leeren Alternativtext benötigt.`
+                      ? `Berücksichtige den Titel (${metaInformation.title}), die Beschreibung (${metaInformation.description}) und Keywords (${metaInformation.keywords}) der Webseite sowie den Kontext des umliegenden Bildes (${context}) bei der Entscheidung, ob das Bild informativ ist und damit einen Alternativtext benötigt oder dekorativ ist und einen leeren Alternativtext benötigt. Antworte bei einem dekorativen Bild mit "leer: ", gefolgt von deiner Begründung.`
                       : ''
                   }`,
               },

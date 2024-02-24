@@ -15,37 +15,37 @@ chrome.runtime.onMessage.addListener((request) => {
 function displayResults(images, metaInformation) {
   const container = document.getElementById('results-container')
 
-  const div = document.createElement('div')
-  div.className = 'meta-container'
+  // const div = document.createElement('div')
+  // div.className = 'meta-container'
 
-  createElement('p', null, 'Meta Title: ', div)
-  createElement(
-    'p',
-    null,
-    metaInformation.title,
-    div,
-    'No meta title available'
-  )
+  // createElement('p', null, 'Meta Title: ', div)
+  // createElement(
+  //   'p',
+  //   null,
+  //   metaInformation.title,
+  //   div,
+  //   'No meta title available'
+  // )
 
-  createElement('p', null, 'Meta Description: ', div)
-  createElement(
-    'p',
-    null,
-    metaInformation.description,
-    div,
-    'No meta description available'
-  )
+  // createElement('p', null, 'Meta Description: ', div)
+  // createElement(
+  //   'p',
+  //   null,
+  //   metaInformation.description,
+  //   div,
+  //   'No meta description available'
+  // )
 
-  createElement('p', null, 'Meta Keywords: ', div)
-  createElement(
-    'p',
-    null,
-    metaInformation.keywords,
-    div,
-    'No meta keywords available'
-  )
+  // createElement('p', null, 'Meta Keywords: ', div)
+  // createElement(
+  //   'p',
+  //   null,
+  //   metaInformation.keywords,
+  //   div,
+  //   'No meta keywords available'
+  // )
 
-  container.appendChild(div)
+  // container.appendChild(div)
 
   images.forEach((image) => {
     const div = document.createElement('div')
@@ -56,6 +56,12 @@ function displayResults(images, metaInformation) {
     const imageData = document.createElement('div')
     imageData.className = 'image-data-container'
     div.appendChild(imageData)
+
+    if (image.isFunctional) {
+      createElement('p', null, 'Funktionales Bild: ', imageData)
+
+      createElement('p', null, image.isFunctional ? 'Ja' : 'Nein', imageData)
+    }
 
     createElement('p', null, 'Alt Text: ', imageData)
 
@@ -90,6 +96,7 @@ function displayResults(images, metaInformation) {
       image.alt_new_context.reason
     )
 
+    console.log(image.context)
     if (image.context) {
       createElement('p', null, 'Context: ', imageData)
       createElement('p', null, image.context, imageData, 'No context available')

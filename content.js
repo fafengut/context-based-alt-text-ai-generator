@@ -24,7 +24,10 @@ chrome.runtime.onMessage.addListener(async (request) => {
             `[data-image="${image.identifier}"]`
           )
           if (imageElement && image.alt_new_context.altText !== null) {
-            imageElement.setAttribute('alt', image.alt_new_context.altText)
+            const altText = image.alt_new_context.altText.startsWith('leer:')
+              ? ''
+              : image.alt_new_context.altText
+            imageElement.setAttribute('alt', altText)
           }
         })
       }
