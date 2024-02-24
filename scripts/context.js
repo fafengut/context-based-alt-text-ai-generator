@@ -28,19 +28,28 @@ function findTextParent(element) {
 function checkSibling(element) {
   let prevSibling = element.previousElementSibling
   let nextSibling = element.nextElementSibling
+  const ignoredTags = [
+    'SCRIPT',
+    'STYLE',
+    'FORM',
+    'IFRAME',
+    'TIME',
+    'NOSCRIPT',
+    'SVG',
+    'IMG',
+    'A',
+  ]
 
   while (
     prevSibling &&
-    (prevSibling.tagName.toUpperCase() === 'SCRIPT' ||
-      prevSibling.tagName.toUpperCase() === 'STYLE')
+    ignoredTags.includes(prevSibling.tagName.toUpperCase())
   ) {
     prevSibling = prevSibling.previousElementSibling
   }
 
   while (
     nextSibling &&
-    (nextSibling.tagName.toUpperCase() === 'SCRIPT' ||
-      nextSibling.tagName.toUpperCase() === 'STYLE')
+    ignoredTags.includes(nextSibling.tagName.toUpperCase())
   ) {
     nextSibling = nextSibling.nextElementSibling
   }
@@ -91,25 +100,30 @@ function checkSiblingText(element, direction) {
 }
 
 function checkChildText(element, processedTexts) {
+  const ignoredTags = [
+    'SCRIPT',
+    'STYLE',
+    'FORM',
+    'IFRAME',
+    'TIME',
+    'NOSCRIPT',
+    'SVG',
+    'IMG',
+    'A',
+  ]
+
   if (element.getAttribute('data-checked') === 'true') {
-    // If the element has data-checked attribute set to true, return an empty string
     return ''
   }
 
-  // If the element is a script or style element, return an empty string
-  if (
-    element.tagName.toUpperCase() === 'SCRIPT' ||
-    element.tagName.toUpperCase() === 'STYLE' ||
-    element.tagName.toUpperCase() === 'FORM' ||
-    element.tagName.toUpperCase() === 'TIME'
-  ) {
+  if (ignoredTags.includes(element.tagName.toUpperCase())) {
     element.setAttribute('data-checked', 'true') // Mark the element as checked
     return ''
   }
 
   let childText = ''
   const children = element.children
-  let allChildrenChecked = true // Set allChildrenChecked to false if there are no children
+  let allChildrenChecked = true
 
   for (let i = 0; i < children.length; i++) {
     childText += checkChildText(children[i], processedTexts) // Recursively check the children
