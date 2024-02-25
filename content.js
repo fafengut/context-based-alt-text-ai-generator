@@ -110,7 +110,7 @@ function scrollToBottom() {
 }
 
 async function checkImage(image) {
-  const src = image.src
+  let src = image.src
   const alt = image.getAttribute('alt')
   let isDecodedImage = src && src.startsWith('data:image/')
 
