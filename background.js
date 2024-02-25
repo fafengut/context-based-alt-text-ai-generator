@@ -144,39 +144,42 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
             content:
               'Du weißt, dass Alternativtexte Informationen über den Inhalt eines Bildes liefern. Du berücksichtigst den Kontext, in dem das Bild erscheint, und die Beschreibung der Webseite. Du berücksichtigst auch den bestehenden Alternativtext des Bildes, falls vorhanden. Du antwortest nur mit dem Alternativtext und in der Sprache der Webseite.',
           },
-          image.isFunctional
-            ? {
-                role: 'system',
-                content:
-                  'Das Bild ist funktional und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zwekc des Bildes), und nicht das Bild beschreiben sollen.',
-              }
-            : {
-                role: 'system',
-                content:
-                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand der Richtlinien der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
+          {
+            role: 'system',
+            content: [
+              {
+                type: 'text',
+                text: ` ${
+                  image && image.alt
+                    ? `Nutze die folgenden Informationen, um den Inhalt des Bildes besser zu verstehen: "${image.alt}"`
+                    : ''
+                }`,
               },
+            ],
+          },
+          {
+            role: 'system',
+            content: [
+              {
+                type: 'text',
+                text: ` ${
+                  metaInformation
+                    ? `Nutze die Informationen aus dem Meta-Tags der Webseiten, um den groben Kontext der Webseite zu verstehen: Titel (${metaInformation.title}), Beschreibung (${metaInformation.description}) und Keywords (${metaInformation.keywords})`
+                    : ''
+                }`,
+              },
+            ],
+          },
+          {
+            role: 'system',
+            content: `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Du musst unabhängig von den vorherigen Informationen entscheiden, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung, oder ob das Bild einen Alternativtext benötigt, dann genriere mir einen passenden Alternativtext.`,
+          },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text:
-                  'Generiere mir einen Alternativtext für dieses Bild.' +
-                  ` ${
-                    context
-                      ? `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Wenn der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung.`
-                      : ''
-                  } ` +
-                  ` ${
-                    image && image.alt
-                      ? `Beziehe den bestehenden Alternativtext des Bildes mit ein: "${image.alt}", sofern dieser Sinn ergibt. Nutze den bestehenden Alternativtext, ohne Bedenken zur Redundanz.`
-                      : ''
-                  }` +
-                  ` ${
-                    metaInformation && context
-                      ? `Berücksichtige den Titel (${metaInformation.title}), die Beschreibung (${metaInformation.description}) und Keywords (${metaInformation.keywords}) der Webseite sowie den Kontext des umliegenden Bildes (${context}) bei der Entscheidung, ob das Bild informativ ist und damit einen Alternativtext benötigt oder dekorativ ist und einen leeren Alternativtext benötigt. Antworte bei einem dekorativen Bild mit "leer: ", gefolgt von deiner Begründung.`
-                      : ''
-                  }`,
+                text: 'Generiere mir einen Alternativtext für dieses Bild.',
               },
               {
                 type: 'image_url',
@@ -187,6 +190,30 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
               },
             ],
           },
+          image.isFunctional
+            ? {
+                role: 'system',
+                content:
+                  'Das Bild ist funktional und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zweck des Bildes), und nicht das Bild beschreiben sollen.',
+              }
+            : {
+                role: 'system',
+                content:
+                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand des Tutorials der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
+              },
+          // {
+          //   role: 'user',
+          //   content: [
+          //     {
+          //       type: 'text',
+          //       text: ` ${
+          //         context
+          //           ? `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Entscheide, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung, oder ob das Bild einen Alternativtext benötigt, dann genriere mir einen passenden Alternativtext.`
+          //           : ''
+          //       } `,
+          //     },
+          //   ],
+          // },
         ],
         seed: 123,
         temperature: 0, // 0.0 to 2.0 - Low Value = More conservative, High Value = More creative
