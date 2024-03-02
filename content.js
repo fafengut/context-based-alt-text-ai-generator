@@ -2,11 +2,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === 'author-mode-triggered') {
     const metaInformation = getMetaInformation()
     const imagesData = await getImagesData()
+    const currentUrl = window.location.href
 
     chrome.runtime.sendMessage({
       message: 'create-author-tab',
       imagesData,
       metaInformation,
+      currentUrl,
     })
   } else if (request.message === 'normal-mode-triggered') {
     const metaInformation = getMetaInformation()
@@ -58,7 +60,7 @@ async function getImagesData() {
         area: imageDetails.area,
         isLogo: imageDetails.isLogo,
         isIcon: imageDetails.isIcon,
-        isFunctional: imageDetails.isFunctional,
+        purpose: imageDetails.purpose,
         identifier: identifier,
       })
     }
@@ -122,12 +124,13 @@ async function checkImage(image) {
 
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
   const isAdvertisement = checkIfAdvertisement(image)
+  const isCorrectType = checkImageType(image)
 
-  if (!isDecodedImage && !isPixel && !isAdvertisement) {
+  if (!isDecodedImage && !isPixel && !isAdvertisement && isCorrectType) {
     try {
       const reachable = await isImageReachable(src)
 
-      const { area, isLogo, isIcon, isFunctional } = checkImageDetails(image)
+      const { area, isLogo, isIcon, purpose } = checkImageDetails(image)
 
       let possibleText = ''
       let metaInformation = {}
@@ -145,7 +148,7 @@ async function checkImage(image) {
           area: area,
           isLogo: isLogo,
           isIcon: isIcon,
-          isFunctional: isFunctional,
+          purpose: purpose,
           metaInformation: metaInformation,
         }
       }
@@ -155,4 +158,13 @@ async function checkImage(image) {
     }
   }
   return undefined
+}
+
+function checkImageType(image) {
+  const imageExtensions = ['.png', '.jpeg', '.jpg', '.gif', '.webp']
+  const src = image.src.toLowerCase()
+  const extension = src.substring(src.lastIndexOf('.'))
+  return imageExtensions.some((ext) => {
+    return extension.includes(ext)
+  })
 }
