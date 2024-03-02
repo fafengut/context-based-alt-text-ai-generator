@@ -31,9 +31,22 @@
     </div>
     <header>
       <h1>Image Alt-Text Checker</h1>
+      <h2 id="website">Webseite: <span></span></h2>
     </header>
     <div id="loading" class="loading">Loading...</div>
     <main id="results-container" class="container">
+      <div id="progress">
+        <label for="progressBar">Bilder werden verarbeitet</label>
+        <progress id="progressBar" value="0" max="100"></progress>
+        <p>
+          <span id="progressText">0</span> von
+          <span id="maxImages">100</span> Bildern verarbeitet
+        </p>
+        <p id="limit-reached">
+          Token-Limit erreicht! Warte auf neue Tokens:
+          <span id="time"></span> Sekunden
+        </p>
+      </div>
       <!-- Ergebnisse werden hier dynamisch eingefügt -->
     </main>
     <script src="author-page.js"></script>
