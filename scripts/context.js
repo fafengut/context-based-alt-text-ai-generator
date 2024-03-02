@@ -4,7 +4,7 @@ function findTextParent(element) {
   let siblingText = ''
   let level = 0
 
-  while (parent && parent.tagName.toUpperCase() !== 'BODY' && level < 5) {
+  while (parent && parent.tagName.toUpperCase() !== 'BODY') {
     if (
       parent.tagName.toUpperCase() !== 'STYLE' &&
       parent.tagName.toUpperCase() !== 'SCRIPT'
@@ -164,8 +164,10 @@ function sliceSourceText(textContent) {
   const sourceKeywords = [
     'Foto:',
     'Bild:',
+    'Bildrechte:',
     'Quelle:',
     'Credits:',
+    'Rechte:',
     '\u00A9',
     'Stand:',
     'Datum:',
@@ -177,10 +179,11 @@ function sliceSourceText(textContent) {
     'Autorin:',
   ]
   let result = textContent
+  const text = textContent.toLowerCase()
   for (let i = 0; i < sourceKeywords.length; i++) {
-    const keyword = sourceKeywords[i]
-    if (textContent.includes(keyword)) {
-      const index = textContent.indexOf(keyword)
+    const keyword = sourceKeywords[i].toLowerCase()
+    if (text.includes(keyword)) {
+      const index = text.indexOf(keyword)
       result = textContent.slice(0, index)
       break
     }
