@@ -19,20 +19,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     getApiKey().then((apiKey) => {
       const imagesData = request.imagesData
       const metaInformation = request.metaInformation
+      const currentUrl = request.currentUrl
 
       chrome.tabs.create(
         { url: 'author-page/author-page.html' },
         function (tab) {
           const resultsTabId = tab.id
-          generateAltTexts(imagesData, metaInformation, apiKey).then(
-            (images) => {
+          setTimeout(() => {
+            generateAltTexts(
+              imagesData,
+              metaInformation,
+              apiKey,
+              resultsTabId
+            ).then((images) => {
               chrome.tabs.sendMessage(resultsTabId, {
                 message: 'display_results',
                 images: images,
                 metaInformation: metaInformation,
+                currentUrl: currentUrl,
               })
-            }
-          )
+            })
+          }, 1000)
         }
       )
     })
@@ -56,57 +63,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 })
 
-async function generateAltTexts(imagesData, metaInformation, apiKey) {
-  const finishedImages = await Promise.all(
-    imagesData.map(async (imageData) => {
-      return {
-        src: imageData.src,
-        alt_old: imageData.alt,
-        // alt_new: await getAlternativeTexts(imageData, apiKey, null, null),
-        alt_new_context:
-          imageData.area === 'footer' ||
-          imageData.area === 'nav' ||
-          imageData.area === 'comments'
-            ? {
-                altText: null,
-                reason: 'Wird für Footer, Kommentare und Nav nicht generiert.',
-              }
-            : await getAlternativeTexts(
-                imageData,
-                apiKey,
-                imageData.context,
-                metaInformation
-              ),
-        context: imageData.context,
-        isFunctional: imageData.isFunctional,
-        identifier: imageData.identifier,
+async function generateAltTexts(
+  imagesData,
+  metaInformation,
+  apiKey,
+  tabId = null
+) {
+  const finishedImages = []
+  const tokenLimitThreshold = 1000
+  const delayInMilliseconds = 60000
+  for (let i = 0; i < imagesData.length; i++) {
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, {
+        message: 'update-progress',
+        progress: { current: i, total: imagesData.length },
+      })
+    }
+    const imageData = imagesData[i]
+    console.log('imageData:', imageData)
+    let result = await getAlternativeTexts(
+      imageData,
+      apiKey,
+      imageData.context,
+      metaInformation
+    )
+    if (result.remainingTokens < tokenLimitThreshold) {
+      if (tabId) {
+        chrome.tabs.sendMessage(tabId, {
+          message: 'limit-reached',
+        })
       }
+      await new Promise((resolve) => setTimeout(resolve, delayInMilliseconds))
+    }
+    finishedImages.push({
+      src: imageData.src,
+      alt_old: imageData.alt,
+      alt_new_context: result,
+      context: imageData.context,
+      purpose: imageData.purpose,
+      identifier: imageData.identifier,
     })
-  ).then((images) => {
-    const requests = images
-      .filter(
-        (image) =>
-          image.alt_new_context !== null &&
-          image.alt_new_context.limitRequests !== null &&
-          image.alt_new_context.limitTokens !== null &&
-          image.alt_new_context.remainingRequests !== null &&
-          image.alt_new_context.remainingTokens !== null
-      )
-      .map((image) => image.alt_new_context)
-    const limitRequests = requests[0].limitRequests
-    const limitTokens = requests[0].limitTokens
-    const remainingRequests = Math.min(
-      ...requests.map((image) => image.remainingRequests)
-    )
-    const remainingTokens = Math.min(
-      ...requests.map((image) => image.remainingTokens)
-    )
-    chrome.runtime.sendMessage({
-      message: 'update-limits',
-      limits: [limitRequests, limitTokens, remainingRequests, remainingTokens],
-    })
-    return images
-  })
+  }
   return finishedImages
 }
 
@@ -146,34 +143,18 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
           },
           {
             role: 'system',
-            content: [
-              {
-                type: 'text',
-                text: ` ${
-                  image && image.alt
-                    ? `Nutze die folgenden Informationen, um den Inhalt des Bildes besser zu verstehen: "${image.alt}"`
-                    : ''
-                }`,
+            content: `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Du musst entscheiden, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung. Wenn das Bild einen Alternativtext benötigt, dann antworte mir mit einem passenden Alternativtext.`,
+          },
+          image.purpose !== false
+            ? {
+                role: 'system',
+                content: `Das Bild ist funktional, da es sich innerhalb eines ${image.purpose} befindet, und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zweck des Bildes), und nicht das Bild beschreiben sollen.`,
+              }
+            : {
+                role: 'system',
+                content:
+                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand des Tutorials der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
               },
-            ],
-          },
-          {
-            role: 'system',
-            content: [
-              {
-                type: 'text',
-                text: ` ${
-                  metaInformation
-                    ? `Nutze die Informationen aus dem Meta-Tags der Webseiten, um den groben Kontext der Webseite zu verstehen: Titel (${metaInformation.title}), Beschreibung (${metaInformation.description}) und Keywords (${metaInformation.keywords})`
-                    : ''
-                }`,
-              },
-            ],
-          },
-          {
-            role: 'system',
-            content: `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Du musst unabhängig von den vorherigen Informationen entscheiden, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung, oder ob das Bild einen Alternativtext benötigt, dann genriere mir einen passenden Alternativtext.`,
-          },
           {
             role: 'user',
             content: [
@@ -190,30 +171,6 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
               },
             ],
           },
-          image.isFunctional
-            ? {
-                role: 'system',
-                content:
-                  'Das Bild ist funktional und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zweck des Bildes), und nicht das Bild beschreiben sollen.',
-              }
-            : {
-                role: 'system',
-                content:
-                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand des Tutorials der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
-              },
-          // {
-          //   role: 'user',
-          //   content: [
-          //     {
-          //       type: 'text',
-          //       text: ` ${
-          //         context
-          //           ? `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Entscheide, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung, oder ob das Bild einen Alternativtext benötigt, dann genriere mir einen passenden Alternativtext.`
-          //           : ''
-          //       } `,
-          //     },
-          //   ],
-          // },
         ],
         seed: 123,
         temperature: 0, // 0.0 to 2.0 - Low Value = More conservative, High Value = More creative
