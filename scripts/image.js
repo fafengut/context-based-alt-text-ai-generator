@@ -67,7 +67,7 @@ function checkImageDetails(element) {
   const src = element.getAttribute('src')
   let currentElement = element
   let area = false
-  let isFunctional = false
+  let purpose = false
   let isLogo = src && src.toLowerCase().includes('logo')
   let isIcon = src && src.toLowerCase().includes('icon')
   const isSmall =
@@ -121,16 +121,16 @@ function checkImageDetails(element) {
       isIcon = true
     }
 
-    if (!isFunctional && (tagName === 'button' || tagName === 'a')) {
-      isFunctional = true
+    if (!purpose && (tagName === 'button' || tagName === 'a')) {
+      purpose = tagName === 'a' ? 'Link' : 'Button'
     }
 
-    if (area && isFunctional && (isLogo || isIcon)) {
+    if (area && purpose && (isLogo || isIcon)) {
       break
     }
 
     currentElement = currentElement.parentElement
   }
 
-  return { area, isLogo, isIcon, isFunctional }
+  return { area, isLogo, isIcon, purpose }
 }
