@@ -80,8 +80,22 @@ async function generateAltTexts(
       })
     }
     const imageData = imagesData[i]
-    console.log('imageData:', imageData)
-    let result = await getAlternativeTexts(
+    const resultWithNoContext = await getAlternativeTexts(
+      imageData,
+      apiKey,
+      null,
+      null
+    )
+    if (resultWithNoContext.remainingTokens < tokenLimitThreshold) {
+      if (tabId) {
+        chrome.tabs.sendMessage(tabId, {
+          message: 'limit-reached',
+        })
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayInMilliseconds))
+    }
+
+    const result = await getAlternativeTexts(
       imageData,
       apiKey,
       imageData.context,
@@ -98,7 +112,8 @@ async function generateAltTexts(
     finishedImages.push({
       src: imageData.src,
       alt_old: imageData.alt,
-      alt_new_context: result,
+      alt_new_no_context: resultWithNoContext,
+      alt_new: result,
       context: imageData.context,
       purpose: imageData.purpose,
       identifier: imageData.identifier,

@@ -121,13 +121,15 @@ function displayResults(images, metaInformation) {
       )
     }
 
-    createElement('p', null, 'Neuer Alt Text (mit Kontext): ', imageData)
+    createElement('p', null, 'Neuer Alt Text (ohne Kontext): ', imageData)
     createElement(
       'p',
       null,
-      image.alt_new_context.altText ? image.alt_new_context.altText : null,
+      image.alt_new_no_context.altText
+        ? image.alt_new_no_context.altText
+        : null,
       imageData,
-      image.alt_new_context.reason
+      image.alt_new_no_context.reason
     )
 
     console.log(image.context)
