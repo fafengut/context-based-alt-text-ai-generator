@@ -1,4 +1,4 @@
-function checkSrcset(image, src, isDecodedImage) {
+function checkSrcset(image, src) {
   const srcset = image.getAttribute('srcset')
 
   const hasSrcset = srcset !== null
@@ -22,18 +22,16 @@ function checkSrcset(image, src, isDecodedImage) {
     }, null)
 
   if (hasSrcset) {
-    isDecodedImage = false
     src = srcset.split(' ').filter((e) => e.startsWith('http'))
-    return { src: src[src.length - 1], isDecodedImage }
+    return src[src.length - 1]
   } else if (siblingWithSrcset) {
-    isDecodedImage = false
     src = siblingWithSrcset
       .getAttribute('srcset')
       .split(' ')
       .filter((e) => e.startsWith('http'))
-    return { src: src[src.length - 1], isDecodedImage }
+    return src[src.length - 1]
   }
-  return { src, isDecodedImage }
+  return src
 }
 
 function parseMediaSize(media) {

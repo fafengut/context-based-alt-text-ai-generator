@@ -119,12 +119,21 @@ async function checkImage(image) {
   // If the image is decoded, check if there is a srcset
   // If there is no srcset, check if there is a sibling with a srcset
   if (isDecodedImage) {
-    ;({ src, isDecodedImage } = checkSrcset(image, src, isDecodedImage))
+    const oldSrc = src
+    src = checkSrcset(image, src)
+    if (oldSrc !== src) {
+      isDecodedImage = false
+    }
   }
 
   const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
   const isAdvertisement = checkIfAdvertisement(image)
-  const isCorrectType = checkImageType(image)
+  let isCorrectType = await checkImageType(src)
+
+  if (!isCorrectType) {
+    src = checkSrcset(image, src)
+    isCorrectType = await checkImageType(src)
+  }
 
   if (!isDecodedImage && !isPixel && !isAdvertisement && isCorrectType) {
     try {
@@ -160,11 +169,21 @@ async function checkImage(image) {
   return undefined
 }
 
-function checkImageType(image) {
-  const imageExtensions = ['.png', '.jpeg', '.jpg', '.gif', '.webp']
-  const src = image.src.toLowerCase()
-  const extension = src.substring(src.lastIndexOf('.'))
-  return imageExtensions.some((ext) => {
-    return extension.includes(ext)
-  })
+function checkImageType(src) {
+  let imageType = null
+  return fetch(src)
+    .then((response) => {
+      if (response.ok) {
+        const contentType = response.headers.get('Content-Type')
+        imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+      } else {
+        console.error('Fetch error:', response.statusText)
+      }
+    })
+    .then(() => {
+      const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
+      return imageExtensions.some((ext) => {
+        return imageType.includes(ext)
+      })
+    })
 }
