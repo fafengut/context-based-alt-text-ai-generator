@@ -4,7 +4,7 @@ function findTextParent(element) {
   let siblingText = ''
   let level = 0
 
-  while (parent && parent.tagName.toUpperCase() !== 'BODY' && level < 5) {
+  while (parent && parent.tagName.toUpperCase() !== 'BODY') {
     if (
       parent.tagName.toUpperCase() !== 'STYLE' &&
       parent.tagName.toUpperCase() !== 'SCRIPT'
@@ -28,19 +28,28 @@ function findTextParent(element) {
 function checkSibling(element) {
   let prevSibling = element.previousElementSibling
   let nextSibling = element.nextElementSibling
+  const ignoredTags = [
+    'SCRIPT',
+    'STYLE',
+    'FORM',
+    'IFRAME',
+    'TIME',
+    'NOSCRIPT',
+    'SVG',
+    'IMG',
+    'A',
+  ]
 
   while (
     prevSibling &&
-    (prevSibling.tagName.toUpperCase() === 'SCRIPT' ||
-      prevSibling.tagName.toUpperCase() === 'STYLE')
+    ignoredTags.includes(prevSibling.tagName.toUpperCase())
   ) {
     prevSibling = prevSibling.previousElementSibling
   }
 
   while (
     nextSibling &&
-    (nextSibling.tagName.toUpperCase() === 'SCRIPT' ||
-      nextSibling.tagName.toUpperCase() === 'STYLE')
+    ignoredTags.includes(nextSibling.tagName.toUpperCase())
   ) {
     nextSibling = nextSibling.nextElementSibling
   }
@@ -91,24 +100,30 @@ function checkSiblingText(element, direction) {
 }
 
 function checkChildText(element, processedTexts) {
+  const ignoredTags = [
+    'SCRIPT',
+    'STYLE',
+    'FORM',
+    'IFRAME',
+    'TIME',
+    'NOSCRIPT',
+    'SVG',
+    'IMG',
+    'A',
+  ]
+
   if (element.getAttribute('data-checked') === 'true') {
-    // If the element has data-checked attribute set to true, return an empty string
     return ''
   }
 
-  // If the element is a script or style element, return an empty string
-  if (
-    element.tagName.toUpperCase() === 'SCRIPT' ||
-    element.tagName.toUpperCase() === 'STYLE' ||
-    element.tagName.toUpperCase() === 'FORM'
-  ) {
+  if (ignoredTags.includes(element.tagName.toUpperCase())) {
     element.setAttribute('data-checked', 'true') // Mark the element as checked
     return ''
   }
 
   let childText = ''
   const children = element.children
-  let allChildrenChecked = true // Set allChildrenChecked to false if there are no children
+  let allChildrenChecked = true
 
   for (let i = 0; i < children.length; i++) {
     childText += checkChildText(children[i], processedTexts) // Recursively check the children
@@ -130,14 +145,12 @@ function checkChildText(element, processedTexts) {
     return childText
   }
 
-  const elementText = element.textContent.trim()
+  const elementText = sliceSourceText(element.textContent.trim())
   if (
     elementText.split(' ').length > 2 &&
-    !checkIfSourceText(elementText) &&
     !checkIfHtmlString(elementText) &&
     !processedTexts.has(elementText) // Check if the text has already been processed
   ) {
-    // element.style.border = '3px solid blue'
     childText += elementText + '\n'
     processedTexts.add(elementText) // Add the text to the set of processed texts
   }
@@ -147,9 +160,35 @@ function checkChildText(element, processedTexts) {
   return childText
 }
 
-function checkIfSourceText(textContent) {
-  const sourceKeywords = ['Foto:', 'Bild:', 'Quelle:', 'Credits:', '\u00A9']
-  return sourceKeywords.some((keyword) => textContent.includes(keyword))
+function sliceSourceText(textContent) {
+  const sourceKeywords = [
+    'Foto:',
+    'Bild:',
+    'Bildrechte:',
+    'Quelle:',
+    'Credits:',
+    'Rechte:',
+    '\u00A9',
+    'Stand:',
+    'Datum:',
+    'Erstellt:',
+    'Zuletzt aktualisiert:',
+    'Zuletzt bearbeitet:',
+    'Bearbeitet:',
+    'Autor:',
+    'Autorin:',
+  ]
+  let result = textContent
+  const text = textContent.toLowerCase()
+  for (let i = 0; i < sourceKeywords.length; i++) {
+    const keyword = sourceKeywords[i].toLowerCase()
+    if (text.includes(keyword)) {
+      const index = text.indexOf(keyword)
+      result = textContent.slice(0, index)
+      break
+    }
+  }
+  return result
 }
 
 // Check if the text contains HTML tags

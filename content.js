@@ -2,11 +2,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === 'author-mode-triggered') {
     const metaInformation = getMetaInformation()
     const imagesData = await getImagesData()
+    const currentUrl = window.location.href
 
     chrome.runtime.sendMessage({
       message: 'create-author-tab',
       imagesData,
       metaInformation,
+      currentUrl,
     })
   } else if (request.message === 'normal-mode-triggered') {
     const metaInformation = getMetaInformation()
@@ -19,16 +21,15 @@ chrome.runtime.onMessage.addListener(async (request) => {
         metaInformation,
       },
       (response) => {
-        console.log(response)
         response.forEach((image) => {
           const imageElement = document.querySelector(
             `[data-image="${image.identifier}"]`
           )
-          if (imageElement) {
-            imageElement.setAttribute(
-              'alt',
-              image.alt_new_context ? image.alt_new_context : image.alt_new
-            )
+          if (imageElement && image.alt_new_context.altText !== null) {
+            const altText = image.alt_new_context.altText.startsWith('leer:')
+              ? ''
+              : image.alt_new_context.altText
+            imageElement.setAttribute('alt', altText)
           }
         })
       }
@@ -44,7 +45,14 @@ async function getImagesData() {
   for (const image of images) {
     const imageDetails = await checkImage(image)
     image.setAttribute('data-image', identifier)
-    if (imageDetails) {
+    if (
+      imageDetails &&
+      imageDetails.isLogo === false &&
+      imageDetails.isIcon === false &&
+      imageDetails.area !== 'footer' &&
+      imageDetails.area !== 'nav' &&
+      imageDetails.area !== 'comments'
+    ) {
       imagesData.push({
         src: imageDetails.src,
         alt: imageDetails.alt,
@@ -52,6 +60,7 @@ async function getImagesData() {
         area: imageDetails.area,
         isLogo: imageDetails.isLogo,
         isIcon: imageDetails.isIcon,
+        purpose: imageDetails.purpose,
         identifier: identifier,
       })
     }
@@ -103,29 +112,49 @@ function scrollToBottom() {
 }
 
 async function checkImage(image) {
-  let src = image.getAttribute('src')
+  let src = image.src
+  let siblingSrcset = null
+  let imageType = null
   const alt = image.getAttribute('alt')
   let isDecodedImage = src && src.startsWith('data:image/')
 
   // If the image is decoded, check if there is a srcset
   // If there is no srcset, check if there is a sibling with a srcset
   if (isDecodedImage) {
-    ;({ src, isDecodedImage } = checkSrcset(image, src, isDecodedImage))
+    const oldSrc = src
+
+    ;({ src, siblingSrcset, imageType } = checkSrcset(image, src))
+
+    if (oldSrc !== src) {
+      isDecodedImage = false
+    }
   }
 
-  const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
+  const isPixel =
+    (image.naturalWidth === 1 && image.naturalHeight === 1) ||
+    (image.width === 1 && image.height === 1)
   const isAdvertisement = checkIfAdvertisement(image)
+  let isCorrectType = false
 
-  if (!isDecodedImage && !isPixel && !isAdvertisement) {
-    const absoluteSrc =
-      src && src.startsWith('http')
-        ? src
-        : new URL(src, window.location.href).href
+  if (!isDecodedImage && !isPixel && !isAdvertisement && imageType === null) {
+    isCorrectType = await checkImageType(src, siblingSrcset)
 
+    if (!isCorrectType) {
+      ;({ src, siblingSrcset, imageType } = checkSrcset(image, src))
+
+      if (imageType !== null) {
+        isCorrectType = true
+      } else {
+        isCorrectType = await checkImageType(src, siblingSrcset)
+      }
+    }
+  }
+
+  if (!isDecodedImage && !isPixel && !isAdvertisement && isCorrectType) {
     try {
-      const reachable = await isImageReachable(absoluteSrc)
+      const reachable = await isImageReachable(src)
 
-      const { area, isLogo, isIcon } = checkImageDetails(image)
+      const { area, isLogo, isIcon, purpose } = checkImageDetails(image)
 
       let possibleText = ''
       let metaInformation = {}
@@ -137,12 +166,13 @@ async function checkImage(image) {
 
       if (reachable) {
         return {
-          src: absoluteSrc,
-          alt: alt,
+          src: src,
+          alt: alt ? alt : null,
           possibleText: possibleText ? possibleText : null,
           area: area,
           isLogo: isLogo,
           isIcon: isIcon,
+          purpose: purpose,
           metaInformation: metaInformation,
         }
       }
@@ -152,4 +182,81 @@ async function checkImage(image) {
     }
   }
   return undefined
+}
+
+async function checkImageType(src, srcset) {
+  const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
+  // const dotIndex = src.lastIndexOf('.')
+  // const equalIndex = src.lastIndexOf('=')
+  // const biggerIndex = Math.max(dotIndex, equalIndex)
+  // const extension = src.substring(biggerIndex + 1)
+  // const isCorrectType = imageExtensions.some((ext) => {
+  //   return extension.includes(ext)
+  // })
+
+  // if (isCorrectType) {
+  //   return true
+  // }
+
+  // let imageType = null
+  // try {
+  //   const response = await fetch(src, {
+  //     method: 'HEAD',
+  //   })
+  //   if (response.ok) {
+  //     const contentType = response.headers.get('Content-Type')
+  //     imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+  //     return imageExtensions.some((ext) => {
+  //       return imageType.includes(ext)
+  //     })
+  //   } else {
+  //     console.error('Fetch error:', response.statusText)
+  //     return false
+  //   }
+  // } catch (error) {
+  //   console.log('Fetch error at:', src)
+  //   console.error('Fetch error:', error)
+  // }
+  let imageType = null
+
+  // chrome.runtime.sendMessage(
+  //   { message: 'get-image-content-type', srcset },
+  //   (response) => {
+  //     console.log(response)
+  //     if (response) {
+  //       const contentType = response.contentType
+  //       imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+  //       // Move the return statement here
+  //       return imageExtensions.some((ext) => {
+  //         return imageType.includes(ext)
+  //       })
+  //     } else {
+  //       console.log('Image not found in loaded requests')
+  //       return false
+  //     }
+  //   }
+  // )
+
+  const response = await new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { message: 'get-image-content-type', src, srcset },
+      (response) => {
+        resolve(response)
+      }
+    )
+  })
+
+  if (response) {
+    const contentType = response.contentType
+    imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+    return imageExtensions.some((ext) => {
+      return imageType.includes(ext)
+    })
+  } else {
+    console.log('Image not found in loaded requests')
+    return false
+  }
 }

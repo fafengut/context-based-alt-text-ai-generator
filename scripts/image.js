@@ -1,4 +1,4 @@
-function checkSrcset(image, src, isDecodedImage) {
+function checkSrcset(image, src) {
   const srcset = image.getAttribute('srcset')
 
   const hasSrcset = srcset !== null
@@ -21,19 +21,26 @@ function checkSrcset(image, src, isDecodedImage) {
       return prevMediaSize > currMediaSize ? prev : curr
     }, null)
 
-  if (hasSrcset) {
-    isDecodedImage = false
-    src = srcset.split(' ').filter((e) => e.startsWith('http'))
-    return { src: src[src.length - 1], isDecodedImage }
-  } else if (siblingWithSrcset) {
-    isDecodedImage = false
+  if (siblingWithSrcset && siblingWithSrcset.getAttribute('type')) {
+    return {
+      src: src,
+      siblingSrcset: siblingWithSrcset.getAttribute('srcset'),
+      imageType: siblingWithSrcset.getAttribute('type'),
+    }
+  }
+
+  if (siblingWithSrcset) {
     src = siblingWithSrcset
       .getAttribute('srcset')
       .split(' ')
       .filter((e) => e.startsWith('http'))
-    return { src: src[src.length - 1], isDecodedImage }
+      .map((e) => e.replace(/,$/, ''))
+    return { src: src[src.length - 1], siblingSrcset: src, imageType: null }
+  } else if (hasSrcset) {
+    src = srcset.split(' ').filter((e) => e.startsWith('http'))
+    return { src: src[src.length - 1], siblingSrcset: src, imageType: null }
   }
-  return { src, isDecodedImage }
+  return src
 }
 
 function parseMediaSize(media) {
@@ -67,6 +74,7 @@ function checkImageDetails(element) {
   const src = element.getAttribute('src')
   let currentElement = element
   let area = false
+  let purpose = false
   let isLogo = src && src.toLowerCase().includes('logo')
   let isIcon = src && src.toLowerCase().includes('icon')
   const isSmall =
@@ -82,6 +90,19 @@ function checkImageDetails(element) {
 
     if (!area && (tagName === 'footer' || tagName === 'nav')) {
       area = tagName
+    }
+
+    if (
+      !area &&
+      (id.includes('comment') ||
+        id.includes('kommentar') ||
+        Array.from(classList).some(
+          (cls) =>
+            cls.toLowerCase().includes('comment') ||
+            cls.toLowerCase().includes('kommentar')
+        ))
+    ) {
+      area = 'comments'
     }
 
     if (
@@ -107,12 +128,16 @@ function checkImageDetails(element) {
       isIcon = true
     }
 
-    if (area && (isLogo || isIcon)) {
+    if (!purpose && (tagName === 'button' || tagName === 'a')) {
+      purpose = tagName === 'a' ? 'Link' : 'Button'
+    }
+
+    if (area && purpose && (isLogo || isIcon)) {
       break
     }
 
     currentElement = currentElement.parentElement
   }
 
-  return { area, isLogo, isIcon }
+  return { area, isLogo, isIcon, purpose }
 }
