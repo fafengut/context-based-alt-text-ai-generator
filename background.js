@@ -80,13 +80,18 @@ async function generateAltTexts(
       })
     }
     const imageData = imagesData[i]
+
+    // Request without context for evaluation
     const resultWithNoContext = await getAlternativeTexts(
       imageData,
       apiKey,
       null,
       null
     )
-    if (resultWithNoContext.remainingTokens < tokenLimitThreshold) {
+    if (
+      resultWithNoContext &&
+      resultWithNoContext.remainingTokens < tokenLimitThreshold
+    ) {
       if (tabId) {
         chrome.tabs.sendMessage(tabId, {
           message: 'limit-reached',
@@ -101,7 +106,7 @@ async function generateAltTexts(
       imageData.context,
       metaInformation
     )
-    if (result.remainingTokens < tokenLimitThreshold) {
+    if (result && result.remainingTokens < tokenLimitThreshold) {
       if (tabId) {
         chrome.tabs.sendMessage(tabId, {
           message: 'limit-reached',

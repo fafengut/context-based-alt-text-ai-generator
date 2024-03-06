@@ -21,14 +21,14 @@ function checkSrcset(image, src) {
       return prevMediaSize > currMediaSize ? prev : curr
     }, null)
 
-  if (hasSrcset) {
-    src = srcset.split(' ').filter((e) => e.startsWith('http'))
-    return src[src.length - 1]
-  } else if (siblingWithSrcset) {
+  if (siblingWithSrcset) {
     src = siblingWithSrcset
       .getAttribute('srcset')
       .split(' ')
       .filter((e) => e.startsWith('http'))
+    return src[src.length - 1]
+  } else if (hasSrcset) {
+    src = srcset.split(' ').filter((e) => e.startsWith('http'))
     return src[src.length - 1]
   }
   return src

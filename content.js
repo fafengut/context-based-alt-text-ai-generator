@@ -126,13 +126,18 @@ async function checkImage(image) {
     }
   }
 
-  const isPixel = image.naturalWidth === 1 && image.naturalHeight === 1
+  const isPixel =
+    (image.naturalWidth === 1 && image.naturalHeight === 1) ||
+    (image.width === 1 && image.height === 1)
   const isAdvertisement = checkIfAdvertisement(image)
-  let isCorrectType = await checkImageType(src)
+  let isCorrectType = false
 
-  if (!isCorrectType) {
-    src = checkSrcset(image, src)
+  if (!isDecodedImage && !isPixel && !isAdvertisement) {
     isCorrectType = await checkImageType(src)
+    if (!isCorrectType) {
+      src = checkSrcset(image, src)
+      isCorrectType = await checkImageType(src)
+    }
   }
 
   if (!isDecodedImage && !isPixel && !isAdvertisement && isCorrectType) {
@@ -169,21 +174,39 @@ async function checkImage(image) {
   return undefined
 }
 
-function checkImageType(src) {
+async function checkImageType(src) {
+  const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
+  const dotIndex = src.lastIndexOf('.')
+  const equalIndex = src.lastIndexOf('=')
+  const biggerIndex = Math.max(dotIndex, equalIndex)
+  const extension = src.substring(biggerIndex + 1)
+  const isCorrectType = imageExtensions.some((ext) => {
+    return extension.includes(ext)
+  })
+
+  if (isCorrectType) {
+    return true
+  }
+
   let imageType = null
-  return fetch(src)
-    .then((response) => {
-      if (response.ok) {
-        const contentType = response.headers.get('Content-Type')
-        imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
-      } else {
-        console.error('Fetch error:', response.statusText)
-      }
+  try {
+    const response = await fetch(src, {
+      method: 'HEAD',
     })
-    .then(() => {
-      const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
+    if (response.ok) {
+      const contentType = response.headers.get('Content-Type')
+      imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+      // const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
       return imageExtensions.some((ext) => {
         return imageType.includes(ext)
       })
-    })
+    } else {
+      console.error('Fetch error:', response.statusText)
+      return false
+    }
+  } catch (error) {
+    console.log('Fetch error at:', src)
+    console.error('Fetch error:', error)
+  }
 }
