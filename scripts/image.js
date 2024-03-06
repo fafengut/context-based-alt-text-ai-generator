@@ -2,39 +2,33 @@ function checkSrcset(image, src) {
   const srcset = image.getAttribute('srcset')
 
   const hasSrcset = srcset !== null
-  const siblingWithSrcset = Array.from(image.parentNode.children)
-    .filter(
-      (sibling) =>
-        sibling.tagName === 'SOURCE' && sibling.getAttribute('srcset') !== null
-    )
-    .reduce((prev, curr) => {
-      const prevMedia = prev?.getAttribute('media')
-      const currMedia = curr?.getAttribute('media')
-      if (!prev) {
-        return curr
-      }
-      if (!prevMedia || !currMedia) {
-        return prev
-      }
-      const prevMediaSize = parseMediaSize(prevMedia)
-      const currMediaSize = parseMediaSize(currMedia)
-      return prevMediaSize > currMediaSize ? prev : curr
-    }, null)
+  const siblingWithSrcset = Array.from(image.parentNode.children).filter(
+    (sibling) =>
+      sibling.tagName === 'SOURCE' && sibling.getAttribute('srcset') !== null
+  )
 
-  if (siblingWithSrcset && siblingWithSrcset.getAttribute('type')) {
-    return {
-      src: src,
-      siblingSrcset: siblingWithSrcset.getAttribute('srcset'),
-      imageType: siblingWithSrcset.getAttribute('type'),
-    }
+  if (
+    siblingWithSrcset &&
+    siblingWithSrcset.some((sibling) => sibling.getAttribute('type'))
+  ) {
+    const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
+    const srcsetTypes = siblingWithSrcset.map((sibling) =>
+      sibling.getAttribute('type')
+    )
+    const imageType = srcsetTypes.find((type) =>
+      imageExtensions.includes(type.split('/')[1])
+    )
+    return { src: src, siblingSrcset: siblingWithSrcset, imageType: imageType }
   }
 
   if (siblingWithSrcset) {
-    src = siblingWithSrcset
-      .getAttribute('srcset')
-      .split(' ')
-      .filter((e) => e.startsWith('http'))
-      .map((e) => e.replace(/,$/, ''))
+    src = siblingWithSrcset.map((sibling) =>
+      sibling
+        .getAttribute('srcset')
+        .split(' ')
+        .filter((e) => e.startsWith('http'))
+        .map((e) => e.replace(/,$/, ''))
+    )
     return { src: src[src.length - 1], siblingSrcset: src, imageType: null }
   } else if (hasSrcset) {
     src = srcset.split(' ').filter((e) => e.startsWith('http'))
