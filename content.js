@@ -115,7 +115,12 @@ async function checkImage(image) {
   let src = image.src
   let siblingSrcset = null
   let imageType = null
-  const alt = image.getAttribute('alt')
+  let alt = image.getAttribute('alt')
+
+  if (alt === '') {
+    alt = 'leerer Alt-Text'
+  }
+
   let isDecodedImage = src && src.startsWith('data:image/')
 
   // If the image is decoded, check if there is a srcset
