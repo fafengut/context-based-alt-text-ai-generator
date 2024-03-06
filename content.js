@@ -114,6 +114,7 @@ function scrollToBottom() {
 async function checkImage(image) {
   let src = image.src
   let siblingSrcset = null
+  let imageType = null
   const alt = image.getAttribute('alt')
   let isDecodedImage = src && src.startsWith('data:image/')
 
@@ -122,7 +123,7 @@ async function checkImage(image) {
   if (isDecodedImage) {
     const oldSrc = src
 
-    ;({ src, srcset: siblingSrcset } = checkSrcset(image, src))
+    ;({ src, siblingSrcset, imageType } = checkSrcset(image, src))
 
     if (oldSrc !== src) {
       isDecodedImage = false
@@ -135,11 +136,17 @@ async function checkImage(image) {
   const isAdvertisement = checkIfAdvertisement(image)
   let isCorrectType = false
 
-  if (!isDecodedImage && !isPixel && !isAdvertisement) {
+  if (!isDecodedImage && !isPixel && !isAdvertisement && imageType === null) {
     isCorrectType = await checkImageType(src, siblingSrcset)
+
     if (!isCorrectType) {
-      ;({ src, siblingSrcset } = checkSrcset(image, src))
-      isCorrectType = await checkImageType(src, siblingSrcset)
+      ;({ src, siblingSrcset, imageType } = checkSrcset(image, src))
+
+      if (imageType !== null) {
+        isCorrectType = true
+      } else {
+        isCorrectType = await checkImageType(src, siblingSrcset)
+      }
     }
   }
 

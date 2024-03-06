@@ -21,16 +21,24 @@ function checkSrcset(image, src) {
       return prevMediaSize > currMediaSize ? prev : curr
     }, null)
 
+  if (siblingWithSrcset && siblingWithSrcset.getAttribute('type')) {
+    return {
+      src: src,
+      siblingSrcset: siblingWithSrcset.getAttribute('srcset'),
+      imageType: siblingWithSrcset.getAttribute('type'),
+    }
+  }
+
   if (siblingWithSrcset) {
     src = siblingWithSrcset
       .getAttribute('srcset')
       .split(' ')
       .filter((e) => e.startsWith('http'))
       .map((e) => e.replace(/,$/, ''))
-    return { src: src[src.length - 1], siblingSrcset: src }
+    return { src: src[src.length - 1], siblingSrcset: src, imageType: null }
   } else if (hasSrcset) {
     src = srcset.split(' ').filter((e) => e.startsWith('http'))
-    return { src: src[src.length - 1], siblingSrcset: src }
+    return { src: src[src.length - 1], siblingSrcset: src, imageType: null }
   }
   return src
 }
