@@ -113,6 +113,7 @@ function scrollToBottom() {
 
 async function checkImage(image) {
   let src = image.src
+  let siblingSrcset = null
   const alt = image.getAttribute('alt')
   let isDecodedImage = src && src.startsWith('data:image/')
 
@@ -120,7 +121,9 @@ async function checkImage(image) {
   // If there is no srcset, check if there is a sibling with a srcset
   if (isDecodedImage) {
     const oldSrc = src
-    src = checkSrcset(image, src)
+
+    ;({ src, srcset: siblingSrcset } = checkSrcset(image, src))
+
     if (oldSrc !== src) {
       isDecodedImage = false
     }
@@ -133,10 +136,10 @@ async function checkImage(image) {
   let isCorrectType = false
 
   if (!isDecodedImage && !isPixel && !isAdvertisement) {
-    isCorrectType = await checkImageType(src)
+    isCorrectType = await checkImageType(src, siblingSrcset)
     if (!isCorrectType) {
-      src = checkSrcset(image, src)
-      isCorrectType = await checkImageType(src)
+      ;({ src, siblingSrcset } = checkSrcset(image, src))
+      isCorrectType = await checkImageType(src, siblingSrcset)
     }
   }
 
@@ -174,39 +177,79 @@ async function checkImage(image) {
   return undefined
 }
 
-async function checkImageType(src) {
+async function checkImageType(src, srcset) {
   const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
-  const dotIndex = src.lastIndexOf('.')
-  const equalIndex = src.lastIndexOf('=')
-  const biggerIndex = Math.max(dotIndex, equalIndex)
-  const extension = src.substring(biggerIndex + 1)
-  const isCorrectType = imageExtensions.some((ext) => {
-    return extension.includes(ext)
+  // const dotIndex = src.lastIndexOf('.')
+  // const equalIndex = src.lastIndexOf('=')
+  // const biggerIndex = Math.max(dotIndex, equalIndex)
+  // const extension = src.substring(biggerIndex + 1)
+  // const isCorrectType = imageExtensions.some((ext) => {
+  //   return extension.includes(ext)
+  // })
+
+  // if (isCorrectType) {
+  //   return true
+  // }
+
+  // let imageType = null
+  // try {
+  //   const response = await fetch(src, {
+  //     method: 'HEAD',
+  //   })
+  //   if (response.ok) {
+  //     const contentType = response.headers.get('Content-Type')
+  //     imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+  //     return imageExtensions.some((ext) => {
+  //       return imageType.includes(ext)
+  //     })
+  //   } else {
+  //     console.error('Fetch error:', response.statusText)
+  //     return false
+  //   }
+  // } catch (error) {
+  //   console.log('Fetch error at:', src)
+  //   console.error('Fetch error:', error)
+  // }
+  let imageType = null
+
+  // chrome.runtime.sendMessage(
+  //   { message: 'get-image-content-type', srcset },
+  //   (response) => {
+  //     console.log(response)
+  //     if (response) {
+  //       const contentType = response.contentType
+  //       imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
+
+  //       // Move the return statement here
+  //       return imageExtensions.some((ext) => {
+  //         return imageType.includes(ext)
+  //       })
+  //     } else {
+  //       console.log('Image not found in loaded requests')
+  //       return false
+  //     }
+  //   }
+  // )
+
+  const response = await new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { message: 'get-image-content-type', src, srcset },
+      (response) => {
+        resolve(response)
+      }
+    )
   })
 
-  if (isCorrectType) {
-    return true
-  }
+  if (response) {
+    const contentType = response.contentType
+    imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
 
-  let imageType = null
-  try {
-    const response = await fetch(src, {
-      method: 'HEAD',
+    return imageExtensions.some((ext) => {
+      return imageType.includes(ext)
     })
-    if (response.ok) {
-      const contentType = response.headers.get('Content-Type')
-      imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
-
-      // const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
-      return imageExtensions.some((ext) => {
-        return imageType.includes(ext)
-      })
-    } else {
-      console.error('Fetch error:', response.statusText)
-      return false
-    }
-  } catch (error) {
-    console.log('Fetch error at:', src)
-    console.error('Fetch error:', error)
+  } else {
+    console.log('Image not found in loaded requests')
+    return false
   }
 }

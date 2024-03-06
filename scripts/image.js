@@ -26,10 +26,11 @@ function checkSrcset(image, src) {
       .getAttribute('srcset')
       .split(' ')
       .filter((e) => e.startsWith('http'))
-    return src[src.length - 1]
+      .map((e) => e.replace(/,$/, ''))
+    return { src: src[src.length - 1], siblingSrcset: src }
   } else if (hasSrcset) {
     src = srcset.split(' ').filter((e) => e.startsWith('http'))
-    return src[src.length - 1]
+    return { src: src[src.length - 1], siblingSrcset: src }
   }
   return src
 }

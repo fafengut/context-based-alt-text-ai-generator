@@ -1,3 +1,48 @@
+let imageRequests = new Map()
+
+chrome.webRequest.onHeadersReceived.addListener(
+  function (details) {
+    if (details.type === 'image') {
+      imageRequests.set(details.url, details)
+    }
+  },
+  { urls: ['<all_urls>'] },
+  ['responseHeaders']
+)
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.message === 'get-image-content-type') {
+    let imageDetails = null
+    console.log('request', request)
+    console.log('imageRequests', imageRequests)
+    if (request.srcset && request.srcset.length > 0) {
+      for (let i = 0; i < request.srcset.length; i++) {
+        if (imageRequests.has(request.srcset[i])) {
+          imageDetails = imageRequests.get(request.srcset[i])
+          break
+        }
+      }
+    } else if (imageRequests.has(request.src)) {
+      imageDetails = imageRequests.get(request.src)
+    }
+
+    if (imageDetails) {
+      for (let i = 0; i < imageDetails.responseHeaders.length; ++i) {
+        if (
+          imageDetails.responseHeaders[i].name.toLowerCase() === 'content-type'
+        ) {
+          console.log('image found', imageDetails.responseHeaders[i].value)
+          sendResponse({ contentType: imageDetails.responseHeaders[i].value })
+          return true
+        }
+      }
+    } else {
+      sendResponse(null)
+      return true // Indicate that we will respond asynchronously
+    }
+  }
+})
+
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'generate-alt') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -85,7 +130,6 @@ async function generateAltTexts(
     const resultWithNoContext = await getAlternativeTexts(
       imageData,
       apiKey,
-      null,
       null
     )
     if (
@@ -103,8 +147,7 @@ async function generateAltTexts(
     const result = await getAlternativeTexts(
       imageData,
       apiKey,
-      imageData.context,
-      metaInformation
+      imageData.context
     )
     if (result && result.remainingTokens < tokenLimitThreshold) {
       if (tabId) {
@@ -127,7 +170,7 @@ async function generateAltTexts(
   return finishedImages
 }
 
-async function getAlternativeTexts(image, apiKey, context, metaInformation) {
+async function getAlternativeTexts(image, apiKey, context) {
   if (image.isLogo || image.isIcon) {
     return {
       altText: null,
@@ -141,6 +184,57 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
     context = null
     metaInformation = null
   }
+
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'Du bist ein hilfreicher Assistant und Profi im Bereich Web-Barrierefreiheit. Daher hältst du dich an die Vorgaben des WCAG. Du hilfst Nutzern beim Erstellen von Alternativtexten für Bilder. Der Alternativtext sollte nicht mehr als 150 Zeichen haben.',
+    },
+    {
+      role: 'system',
+      content:
+        'Du weißt, dass Alternativtexte Informationen über den Inhalt eines Bildes liefern. Du berücksichtigst den Kontext, in dem das Bild erscheint, und die Beschreibung der Webseite. Du berücksichtigst auch den bestehenden Alternativtext des Bildes, falls vorhanden. Du antwortest nur mit dem Alternativtext und in der Sprache der Webseite.',
+    },
+  ]
+
+  if (context) {
+    messages.push({
+      role: 'system',
+      content: `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Du musst entscheiden, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung. Wenn das Bild einen Alternativtext benötigt, dann antworte mir mit einem passenden Alternativtext.`,
+    })
+  }
+
+  if (image.purpose !== false) {
+    messages.push({
+      role: 'system',
+      content: `Das Bild ist funktional, da es sich innerhalb eines ${image.purpose} befindet, und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zweck des Bildes), und nicht das Bild beschreiben sollen.`,
+    })
+  } else {
+    messages.push({
+      role: 'system',
+      content:
+        'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand des Entscheidungsbaums für ALt-Texte der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
+    })
+  }
+
+  messages.push({
+    role: 'user',
+    content: [
+      {
+        type: 'text',
+        text: 'Generiere mir einen Alternativtext für dieses Bild.',
+      },
+      {
+        type: 'image_url',
+        image_url: {
+          url: image.src,
+          detail: 'low',
+        },
+      },
+    ],
+  })
+
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -150,48 +244,7 @@ async function getAlternativeTexts(image, apiKey, context, metaInformation) {
       },
       body: JSON.stringify({
         model: 'gpt-4-vision-preview',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Du bist ein hilfreicher Assistant und Profi im Bereich Web-Barrierefreiheit. Daher hältst du dich an die Vorgaben des WCAG. Du hilfst Nutzern beim Erstellen von Alternativtexten für Bilder. Der Alternativtext sollte nicht mehr als 150 Zeichen haben.',
-          },
-          {
-            role: 'system',
-            content:
-              'Du weißt, dass Alternativtexte Informationen über den Inhalt eines Bildes liefern. Du berücksichtigst den Kontext, in dem das Bild erscheint, und die Beschreibung der Webseite. Du berücksichtigst auch den bestehenden Alternativtext des Bildes, falls vorhanden. Du antwortest nur mit dem Alternativtext und in der Sprache der Webseite.',
-          },
-          {
-            role: 'system',
-            content: `Beziehe den folgenden Kontext, welcher in der Nähe des Bildes sich befindet, mit ein: "${context}". Der Alternativtext darf allerdings den Kontext nicht wiederholen, da es sonst zu Redundanz führt. Du musst entscheiden, ob der Kontext das Bild bereits ausreichend beschreibt, dann antworte in diesem Fall mit "leer: ", gefolgt von deiner Begründung. Wenn das Bild einen Alternativtext benötigt, dann antworte mir mit einem passenden Alternativtext.`,
-          },
-          image.purpose !== false
-            ? {
-                role: 'system',
-                content: `Das Bild ist funktional, da es sich innerhalb eines ${image.purpose} befindet, und du weißt, dass Textalternativen für funktionale Bilder die Aktion vermitteln, die eingeleitet wird (den Zweck des Bildes), und nicht das Bild beschreiben sollen.`,
-              }
-            : {
-                role: 'system',
-                content:
-                  'Das Bild könnte informativ oder dekorativ sein. Du musst entscheiden, welches anhand des Tutorials der Web Accessibility Initiative eher zutrifft und das entsprechende Verfahren für die Erstellung des Alternativentext wählen.',
-              },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Generiere mir einen Alternativtext für dieses Bild.',
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: image.src,
-                  detail: 'low',
-                },
-              },
-            ],
-          },
-        ],
+        messages: messages,
         seed: 123,
         temperature: 0, // 0.0 to 2.0 - Low Value = More conservative, High Value = More creative
         max_tokens: 100,
