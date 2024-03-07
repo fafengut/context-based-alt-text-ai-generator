@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const saveBtn = document.getElementById('save-btn')
   const authorModeBtn = document.getElementById('authormode')
 
+  // load all needed shortcuts
   chrome.commands.getAll(function (commands) {
     commands.forEach(function (command) {
       if (command.name === 'generate-alt') {
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
   })
 
+  // load api key from storage
   chrome.storage.local.get(['apiKey'], function (result) {
     if (result.apiKey) {
       apiKeyInput.value = result.apiKey
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
     event.preventDefault()
   }
 
+  // save api key to storage if valid
   saveBtn.addEventListener('click', function () {
     const apiKey = apiKeyInput.value.trim()
 
@@ -55,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   })
 
+  // start author-mode by sending message to content script
   authorModeBtn.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, {

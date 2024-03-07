@@ -26,6 +26,7 @@ chrome.runtime.onMessage.addListener((request) => {
     }
     limits.style.display = 'flex'
   } else if (request.message === 'update-progress') {
+    // update progress-bar after each image was processed by the ai api
     loading.style.display = 'none'
     progress.style.display = 'flex'
     progressBar.value = request.progress.current
@@ -33,6 +34,7 @@ chrome.runtime.onMessage.addListener((request) => {
     progressBar.max = request.progress.total
     maxImages.innerText = request.progress.total
   } else if (request.message === 'limit-reached') {
+    // notification if limit is reached and start countdown for new tokens
     const limitReached = document.getElementById('limit-reached')
     const time = document.getElementById('time')
     limitReached.style.display = 'block'
@@ -48,39 +50,8 @@ chrome.runtime.onMessage.addListener((request) => {
   }
 })
 
+// function to render the information for each image
 function displayResults(images, metaInformation) {
-  // const div = document.createElement('div')
-  // div.className = 'meta-container'
-
-  // createElement('p', null, 'Meta Title: ', div)
-  // createElement(
-  //   'p',
-  //   null,
-  //   metaInformation.title,
-  //   div,
-  //   'No meta title available'
-  // )
-
-  // createElement('p', null, 'Meta Description: ', div)
-  // createElement(
-  //   'p',
-  //   null,
-  //   metaInformation.description,
-  //   div,
-  //   'No meta description available'
-  // )
-
-  // createElement('p', null, 'Meta Keywords: ', div)
-  // createElement(
-  //   'p',
-  //   null,
-  //   metaInformation.keywords,
-  //   div,
-  //   'No meta keywords available'
-  // )
-
-  // resultContainer.appendChild(div)
-
   images.forEach((image) => {
     const div = document.createElement('div')
     div.className = 'image-container'

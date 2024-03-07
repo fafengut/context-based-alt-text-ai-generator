@@ -1,3 +1,4 @@
+// function to traverse through parents and checking siblings for text nodes
 function findTextParent(element) {
   let parent = element.parentElement
   const minWordCount = 3
@@ -25,6 +26,7 @@ function findTextParent(element) {
   return false
 }
 
+// function to check for previous and next siblings
 function checkSibling(element) {
   let prevSibling = element.previousElementSibling
   let nextSibling = element.nextElementSibling
@@ -64,6 +66,7 @@ function checkSibling(element) {
   return combinedText.trim() || false
 }
 
+// function to check each sibling for child nodes
 function checkSiblingText(element, direction) {
   const minWordCount = 5
   let siblingText = ''
@@ -99,6 +102,7 @@ function checkSiblingText(element, direction) {
   return siblingText.trim() || false
 }
 
+// recursive function to check for child nodes and their text
 function checkChildText(element, processedTexts) {
   const ignoredTags = [
     'SCRIPT',
@@ -160,6 +164,7 @@ function checkChildText(element, processedTexts) {
   return childText
 }
 
+// function to remove parts of the text, that doesn't provide context
 function sliceSourceText(textContent) {
   const sourceKeywords = [
     'Foto:',
@@ -191,13 +196,14 @@ function sliceSourceText(textContent) {
   return result
 }
 
-// Check if the text contains HTML tags
+// function to check if the text contains HTML tags
 function checkIfHtmlString(textContent) {
   const htmlTagsRegex =
     /<(?!\/?\s*\d+\s*<\s*\d+\s*&&\s*\d+\s*>\s*\d+\s*\/?\s*>)[^>]+>/g
   return htmlTagsRegex.test(textContent)
 }
 
+// function to retrieve information from meta tags
 function getMetaInformation() {
   const title = document.querySelector('title').textContent
     ? document.querySelector('title').textContent

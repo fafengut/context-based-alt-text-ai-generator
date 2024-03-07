@@ -1,4 +1,5 @@
-let imageRequests = new Map()
+// map with all images loaded during website request
+const imageRequests = new Map()
 
 chrome.webRequest.onHeadersReceived.addListener(
   function (details) {
@@ -10,6 +11,8 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 )
 
+// message handler to match currently checked image with images in map of loaded images
+// return type of image if match found
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.message === 'get-image-content-type') {
     let imageDetails = null
@@ -38,11 +41,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       }
     } else {
       sendResponse(null)
-      return true // Indicate that we will respond asynchronously
+      return true // respond asynchronously
     }
   }
 })
 
+// listeners for keyboard shortcuts to trigger appropriate mode via message
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'generate-alt') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -59,6 +63,9 @@ chrome.commands.onCommand.addListener((command) => {
   }
 })
 
+// message listener to start communication with ai api
+// creating new tab for the author-mode
+// response with generated alt-text
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'create-author-tab') {
     getApiKey().then((apiKey) => {
@@ -108,6 +115,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 })
 
+// handler for communication with api and keeping track of limits
 async function generateAltTexts(
   imagesData,
   metaInformation,
@@ -170,6 +178,7 @@ async function generateAltTexts(
   return finishedImages
 }
 
+// message constructor and fetching alt-text
 async function getAlternativeTexts(image, apiKey, context) {
   if (image.isLogo || image.isIcon) {
     return {
@@ -246,7 +255,7 @@ async function getAlternativeTexts(image, apiKey, context) {
         model: 'gpt-4-vision-preview',
         messages: messages,
         seed: 123,
-        temperature: 0, // 0.0 to 2.0 - Low Value = More conservative, High Value = More creative
+        temperature: 0, // 0.0 to 2.0 - low value = more conservative, high value = more creative
         max_tokens: 100,
       }),
     })
@@ -261,7 +270,6 @@ async function getAlternativeTexts(image, apiKey, context) {
       throw new Error(
         `Fehler bei der Anfrage an die OpenAI-API: ${result.error.message}`
       )
-      // return `Fehler bei der Anfrage an die OpenAI-API: ${result.error.message}`
     }
     let altText = result.choices[0].message.content
     if (altText.startsWith('Alternativtext:')) {

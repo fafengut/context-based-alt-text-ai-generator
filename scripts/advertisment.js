@@ -1,3 +1,4 @@
+// function to decide if image is an advertisment or not
 function checkIfAdvertisement(image) {
   const adKeywords = [
     'werbung',
@@ -14,7 +15,7 @@ function checkIfAdvertisement(image) {
     'promotion',
   ]
 
-  // Check if the src or alt attribute contains any of the ad keywords
+  // check if the src or alt attribute contains any of the ad keywords
   const src = image.getAttribute('src')
   const alt = image.getAttribute('alt')
   if (
@@ -27,10 +28,10 @@ function checkIfAdvertisement(image) {
     return true
   }
 
-  // Check if the class or id of the image or its parent elements contain any of the ad keywords
+  // check if the class or id of the image or its parent elements contain any of the ad keywords
   let currentElement = image
   while (currentElement && currentElement.tagName !== 'BODY') {
-    // Add condition to check if current element is the body tag
+    // add condition to check if current element is the body tag
     const pseudoContent = getBeforeOrAfterContent(currentElement)
     if (
       adKeywords.some(
@@ -60,6 +61,7 @@ function checkIfAdvertisement(image) {
   return false
 }
 
+// function the retrieve the content of pseudo elements
 function getBeforeOrAfterContent(element) {
   const beforeCSS = getComputedStyle(element, '::before').content.toLowerCase()
   const afterCSS = getComputedStyle(element, '::after').content.toLowerCase()

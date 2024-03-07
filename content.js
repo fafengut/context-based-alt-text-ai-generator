@@ -1,3 +1,4 @@
+// message listener to trigger appropriate mode and fetch images, information and context
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === 'author-mode-triggered') {
     const metaInformation = getMetaInformation()
@@ -37,6 +38,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
   }
 })
 
+// function to retrieve all images
 async function getImagesData() {
   await scrollToBottom()
   const imagesData = []
@@ -70,8 +72,8 @@ async function getImagesData() {
   return imagesData
 }
 
+// function to add a blur effect during the analysis of the website
 function scrollToBottom() {
-  // Add blur and message
   const blurOverlay = document.createElement('div')
   blurOverlay.style.position = 'fixed'
   blurOverlay.style.top = '0'
@@ -111,6 +113,7 @@ function scrollToBottom() {
   })
 }
 
+// function to get information for image like src, alt, if it's an advertisment or not and so on
 async function checkImage(image) {
   let src = image.src
   let siblingSrcset = null
@@ -189,60 +192,10 @@ async function checkImage(image) {
   return undefined
 }
 
+// function to check the image type since gpt4-v doesn't support all types
 async function checkImageType(src, srcset) {
   const imageExtensions = ['png', 'jpeg', 'jpg', 'gif', 'webp']
-  // const dotIndex = src.lastIndexOf('.')
-  // const equalIndex = src.lastIndexOf('=')
-  // const biggerIndex = Math.max(dotIndex, equalIndex)
-  // const extension = src.substring(biggerIndex + 1)
-  // const isCorrectType = imageExtensions.some((ext) => {
-  //   return extension.includes(ext)
-  // })
-
-  // if (isCorrectType) {
-  //   return true
-  // }
-
-  // let imageType = null
-  // try {
-  //   const response = await fetch(src, {
-  //     method: 'HEAD',
-  //   })
-  //   if (response.ok) {
-  //     const contentType = response.headers.get('Content-Type')
-  //     imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
-
-  //     return imageExtensions.some((ext) => {
-  //       return imageType.includes(ext)
-  //     })
-  //   } else {
-  //     console.error('Fetch error:', response.statusText)
-  //     return false
-  //   }
-  // } catch (error) {
-  //   console.log('Fetch error at:', src)
-  //   console.error('Fetch error:', error)
-  // }
   let imageType = null
-
-  // chrome.runtime.sendMessage(
-  //   { message: 'get-image-content-type', srcset },
-  //   (response) => {
-  //     console.log(response)
-  //     if (response) {
-  //       const contentType = response.contentType
-  //       imageType = contentType.substring(contentType.lastIndexOf('/') + 1)
-
-  //       // Move the return statement here
-  //       return imageExtensions.some((ext) => {
-  //         return imageType.includes(ext)
-  //       })
-  //     } else {
-  //       console.log('Image not found in loaded requests')
-  //       return false
-  //     }
-  //   }
-  // )
 
   const response = await new Promise((resolve) => {
     chrome.runtime.sendMessage(

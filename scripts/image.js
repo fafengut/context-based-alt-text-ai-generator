@@ -1,3 +1,4 @@
+// function to check if the image or a sibling has srcset and return it
 function checkSrcset(image, src) {
   const srcset = image.getAttribute('srcset')
 
@@ -51,8 +52,7 @@ function parseMediaSize(media) {
   return 0
 }
 
-// Hilfsfunktion, um zu prüfen, ob ein Bild erreichbar ist
-// Gibt ein Promise zurück, das true oder false resolved
+// handler to check if an image is reachable or not
 async function isImageReachable(src) {
   return new Promise((resolve) => {
     const img = new Image()
@@ -64,6 +64,7 @@ async function isImageReachable(src) {
   })
 }
 
+// function to determine information for image
 function checkImageDetails(element) {
   const src = element.getAttribute('src')
   let currentElement = element
